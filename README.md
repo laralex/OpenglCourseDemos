@@ -1,21 +1,43 @@
 # OpenGL course for ISP 2021 (Skoltech)
 
 ## OpenGL resources
-* [Official OpenGL API
-  reference](https://www.khronos.org/registry/OpenGL-Refpages/gl4/)
-* TODO: better API reference
-* TODO: OpenGL books
+> I can't really suggest OpenGL books. Just beware that books older than 2010 may describe OpenGL 2, which is very obsolete and inefficient.
+* OpenGL documentation
+  * [Official OpenGL API
+    reference](https://www.khronos.org/registry/OpenGL-Refpages/gl4/)
+  * [Arguably better web-site with OpenGL API reference](https://docs.gl/)
+* Step-by-step guides
+  * [Learnopengl.com](https://learnopengl.com/)
+  * [OpenGL-tutorial.org](http://www.opengl-tutorial.org/)
+  * [Open.gl](https://open.gl/)
+
 * YouTube:
-   * [ThinMatrix](https://www.youtube.com/watch?v=VS8wlS9hF8E&list=PLRIWtICgwaX0u7Rf9zkZhLoLuZVfUksDP),
-     an author of OpenGL tutorials, and sole creator of Equilinox game
-   * [The
+  * [ThinMatrix](https://www.youtube.com/watch?v=VS8wlS9hF8E&list=PLRIWtICgwaX0u7Rf9zkZhLoLuZVfUksDP),
+     an author of OpenGL tutorials, and the sole creator of Equilinox game
+  * [The
      Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2),
-     an author of OpenGL tutorials and creator of Hazel game engine
-   * [Jamie King](https://www.youtube.com/user/1kingja) has a few
-     well-explaining OpenGL videos
+     an author of OpenGL tutorials and the creator of Hazel game engine
+  * [Victor Gordan](https://www.youtube.com/c/VictorGordan/videos), follows Learnopengl.com guide in a video format
+  * [Brian Will](https://www.youtube.com/user/briantwill/featured), awesome
+      explanations of OpenGL and computer graphics concepts
+  * [Jamie King](https://www.youtube.com/user/1kingja) has a few
+     well-explaining OpenGL and computer graphics videos
 
 ## Computer graphics resources
-* TODO: math for computer graphics book
+* [Scratchapixel.com](https://www.scratchapixel.com/index.php?redirect) -
+  quite a few good articles on computer graphics, ray tracing
+* [Real-time rendering courses hosted by SIGRAPH conference](https://advances.realtimerendering.com/)
+  presentations from computer graphics leaders, posted every year since 2006 to 2021
+* [Foundations of Game Engine
+  Development](https://foundationsofgameenginedev.com/) by Eric Lengyel - a
+  legendary 4-books series about computer graphics math, rendering, materials,
+  physics
+* [Mathematics for 3D Game Programming and Computer Graphics, Third
+  Edition](https://www.amazon.com/Mathematics-Programming-Computer-Graphics-Third/dp/1435458869)
+  a bit older book by Eric Lengyel
+* [Computer Graphics from Scratch: A Programmer's Introduction to 3D
+  Rendering](https://www.amazon.com/Computer-Graphics-Scratch-Gabriel-Gambetta/dp/1718500769)
+ by Gabriel Gambetta  - I haven't read it yet, but seems easy and fun
 * YouTube
    * [Sebastian Lague](https://www.youtube.com/c/SebastianLague), definitely
      check it out, every video is
@@ -28,53 +50,74 @@
       how to create very cool looking fragment shaders (not OpenGL, but rather
       [Shadertoy](https://www.shadertoy.com/) which is 99% similar to OpenGL
       fragment shaders)
+    * [Martin Donald](https://www.youtube.com/c/MartinDonald), has only a few short ideos, but extremely interesting and well explained
     * [javidx9](https://www.youtube.com/c/javidx9/videos), makes a series of
-      delibrately old-school graphics approaches, but very well explained
+      deliberately old-school graphics approaches, but very well explained
    * [thebennybox](https://www.youtube.com/user/thebennybox), a collection of
      very good explanations of graphics, and graphics optimizations
 
-## Preparations
+## Installation
 
-Option 1. (preferred) Conda environment:
+We will be using a few Python libraries. Why? OpenGL **only** can manage
+GPU drawing (configuring GPU, sending/receiving data to GPU), it **can't** 
+make windows and user interfaces in your operating system, it **doesn't**
+include mathematical primitives common in computer graphics,
+ it's **doesn't** have anything for data parsing (e.g. 3D
+model files) and decoding (e.g. uncompressing JPEG or PNG images).
+
+Thus, we'll use:
+* PyOpenGL (plus PyOpenGl_accelerate) - provides access to OpenGL API from Python
+* PyGLFW - manages cross-platform creation of windows (also available in C/C++ programming languages)
+  and interation using keyboard/mouse
+* Pyrr - math functions commonly used in computer graphics
+* Imgui - fancy user-interface elements
+* Pillow - encoding and decoding image files
+* PyWavefront - decoding 3D models files in OBJ format
+
+Option 1. (preferred) Anaconda environment:
 
 ```
 conda create --name gl
 conda activate gl
-conda install -c anaconda pyopengl pyopengl-accelerate
+conda install -c conda-forge pyopengl pyopengl-accelerate pyglfw pyrr pillow
+pip install imgui[glfw] pywavefront
 ```
 
 Option 2. If you don't mind polluting your default Python environment, then you can
 globally install like this:
 ```
-pip install PyOpenGL PyOpenGL_accelerate
+pip install PyOpenGL PyOpenGL_accelerate glfw pyrr pillow imgui[glfw] pywavefront
 ```
 
-If anything doesn't work, follow [the link to
-PyOpenGl](http://pyopengl.sourceforge.net/), scroll to `Downloading and
+## !!!
+
+You may have troubles when installing those packages.
+* To fix PyOpenGL, try to follow [its official page
+PyOpenGL](http://pyopengl.sourceforge.net/), scroll to `Downloading and
 Installation` paragraph and follow the instructions
+* To fix GLFW, try to follow [its official
+  repository](https://github.com/FlorianRhiem/pyGLFW#installation) and install
+  additional library for your OS
 
-## Usage
+## How to use this repository
 
-The most relevant version of the code is on `main` branch of the repository. The
+The most relevant version of the code is on the `main` branch of the repository. The
 repository contains:
 * Lecture demos
 * Homework demos, and those are implemented as "fill in the
   gaps" programs. Complete to see the demo!
 
-You can always start the program using
+This command should open a window with a running visualization, and UI controls that allow your interaction.
 ```
-python -m src
-```
-You should see the window where all the graphics is rendered, along side with UI
-controls that let you interact with the demo.
-
-If you're debugging one particular demo, you may start the program with this
-demo selected:
-```
-python -m src --startup_demo hw1
+python run.py
 ```
 
-If may also want to tweak the default UI parameters in a `ui-defaults.json`
+If you're debugging one particular demo, it may be convenient to start the application with this demo right away.
+```
+python run.py hw1
+```
+
+If may also want to tweak the default UI parameters in a `ui_defaults.json`
 config of the particular demo folder.
 
 ## How to work on homeworks

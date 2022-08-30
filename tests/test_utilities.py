@@ -13,7 +13,7 @@ class TestUtilities(unittest.TestCase):
             if not os.path.isdir(subdir):
                 continue
 
-            ui_defaults_json = os.path.join(subdir, 'ui-defaults.json')
+            ui_defaults_json = os.path.join(subdir, 'ui_defaults.json')
             if not os.path.exists(ui_defaults_json):
                 continue
             fields = ["screen_width", "screen_height"]
