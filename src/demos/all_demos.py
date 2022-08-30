@@ -41,6 +41,9 @@ class ProxyDemo(Demo):
             if demo_id == startup_demo_id:
                 self.current_demo_idx = idx
 
+        self.windowed_position = None
+        self.windowed_size = None
+
     @property
     def current_demo(self):
         return self.demos[self.current_demo_idx][1]
@@ -50,15 +53,28 @@ class ProxyDemo(Demo):
         return self.demos[self.current_demo_idx][0]
 
     def keyboard_callback(self, window, key, scancode, action, mods):
-        changed = False
+        changed_demo = False
         if (key, action) == (glfw.KEY_LEFT_BRACKET, glfw.PRESS):
+            # previous demo
             self.current_demo_idx -= 1
-            changed = True
+            changed_demo = True
         if (key, action) == (glfw.KEY_RIGHT_BRACKET, glfw.PRESS):
+            # next demo
             self.current_demo_idx += 1
-            changed = True
+            changed_demo = True
+        if (key, action) == (glfw.KEY_F, glfw.PRESS):
+            # toggle fullscreen
+            is_fullscreen = glfw_is_fullscreen(window)
+            if not is_fullscreen:
+                self.windowed_position = glfw.get_window_pos(window)
+                self.windowed_size = glfw.get_window_size(window)
+            glfw_set_borderless_fullscreen(window, 
+            enable_fullscreen=not is_fullscreen,
+                window_position=self.windowed_position,
+                window_size=self.windowed_size)
+        
 
-        if changed:
+        if changed_demo:
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
         else:
             self.current_demo.keyboard_callback(window, key, scancode, action, mods)
