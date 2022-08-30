@@ -79,7 +79,7 @@ Option 1. (preferred) Anaconda environment:
 ```
 conda create --name gl
 conda activate gl
-conda install -c conda-forge pyopengl pyopengl-accelerate pyglfw pyrr pillow
+conda install -c conda-forge pyopengl-accelerate pyglfw pyrr pillow
 pip install imgui[glfw] pywavefront
 ```
 

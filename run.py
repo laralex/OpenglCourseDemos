@@ -1,5 +1,5 @@
 import argparse
-from src.demos.demo import register_all_demos
+from src.demos.all_demos import ProxyDemo
 from src.demos.common.window import *
 
 def parse_arguments():
@@ -13,13 +13,9 @@ def main():
 
     with GlfwInstance():
         window = glfw_create_window('OpenGL Course Demos', window_size=(512, 512))
-        demos = register_all_demos()
-        print(demos.keys())
-        current_demo = demos[args.startup_demo]
-        current_demo.load(window)
-        glfw_render_loop(
-            window=window,
-            render_frame_func=lambda window: None)
+        loader = ProxyDemo(ui_defaults=None, startup_demo_id=args.startup_demo)
+        loader.load(window)
+        loader.render_loop(window)
 
 if __name__ == "__main__":
    main()

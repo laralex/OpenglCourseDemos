@@ -17,16 +17,6 @@ class GlfwInstance:
     def __exit__(self, type, value, traceback):
         glfw.terminate()
 
-def glfw_render_loop(window, render_frame_func):
-    # GLFW allows multiple windows, select this window as active
-    glfw.make_context_current(window)
-
-    # infinite render loop, until the window is requested to close
-    while not glfw.window_should_close(window):
-        render_frame_func(window) # draw to memory
-        glfw.swap_buffers(window) # flush what was drawn to the screen pixels
-        glfw.poll_events()        # handle keyboard/mouse/window events
-
 def glfw_is_fullscreen(window):
     return glfw.get_window_monitor(window)
 

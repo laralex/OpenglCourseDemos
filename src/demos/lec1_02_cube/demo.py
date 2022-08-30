@@ -7,14 +7,14 @@ from OpenGL.GL import *
 class UiDefaults:
     color: int
 
-class Lecture01_TriangleDemo(Demo):
+class Lecture01_CubeDemo(Demo):
 
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
 
     def render_frame(self, window):
-        glClearColor(1,0,0,1)
+        glClearColor(0,1,0,1)
         glClear(GL_COLOR_BUFFER_BIT)
 
 
