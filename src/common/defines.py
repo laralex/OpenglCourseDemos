@@ -1,0 +1,4 @@
+import OpenGL
+OpenGL.ERROR_CHECKING = True
+OpenGL.ERROR_LOGGING = True
+OpenGL.ERROR_ON_COPY = False

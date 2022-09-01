@@ -1,9 +1,7 @@
-from functools import partial
-from typing import OrderedDict
 from .common.window import *
 import sys, os
 
-
+# Base class for lecture and homework demos
 class Demo:
     def __init__(self, ui_defaults):
         self.ui_defaults = ui_defaults
@@ -14,24 +12,30 @@ class Demo:
         folder_name = os.path.normpath(path).split(os.path.sep)[-2]
         return folder_name
 
+    @property
+    def is_loaded(self) -> bool:
+        return True
+
     def keyboard_callback(self, window, key, scancode, action, mods):
-        print('KEY', key, scancode, action, mods)
-
-    def mouse_button_callback(self):
         pass
 
-    def mouse_scroll_callback(self):
+    def mouse_button_callback(self, window, button, action, mods):
         pass
 
-    def render_frame(self, window):
+    def mouse_scroll_callback(self, window, xoffset, yoffset):
+        pass
+
+    def render_frame(self, window, width, height):
         pass
 
     def load(self, window):
-        glfw_set_input_callbacks(window=window,
-            keyboard_callback=self.keyboard_callback,
-            mouse_button_callback=self.mouse_button_callback,
-            mouse_scroll_callback=self.mouse_scroll_callback)
+        pass
 
+    def unload(self):
+        pass
+
+# A wrapper class to import all separate demos
+# and render them in one window with convenient switching between demos
 class ProxyDemo(Demo):
     def __init__(self, ui_defaults, startup_demo_id):
         super().__init__(ui_defaults=ui_defaults)
@@ -53,7 +57,9 @@ class ProxyDemo(Demo):
         return self.demos[self.current_demo_idx][0]
 
     def keyboard_callback(self, window, key, scancode, action, mods):
+        super().keyboard_callback(window, key, scancode, action, mods)
         changed_demo = False
+        running_demo = self.current_demo
         if (key, action) == (glfw.KEY_LEFT_BRACKET, glfw.PRESS):
             # previous demo
             self.current_demo_idx -= 1
@@ -68,16 +74,24 @@ class ProxyDemo(Demo):
             if not is_fullscreen:
                 self.windowed_position = glfw.get_window_pos(window)
                 self.windowed_size = glfw.get_window_size(window)
-            glfw_set_borderless_fullscreen(window, 
+            glfw_switch_fullscreen(window, 
             enable_fullscreen=not is_fullscreen,
                 window_position=self.windowed_position,
                 window_size=self.windowed_size)
-        
-
         if changed_demo:
+            running_demo.unload()
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
+            self.current_demo.load(window)
         else:
             self.current_demo.keyboard_callback(window, key, scancode, action, mods)
+
+    def mouse_button_callback(self, window, button, action, mods):
+        super().mouse_button_callback(window, button, action, mods)
+        self.current_demo.mouse_button_callback(window, button, action, mods)
+
+    def mouse_scroll_callback(self, window, xoffset, yoffset):
+        super().mouse_scroll_callback(window, xoffset, yoffset)
+        self.current_demo.mouse_scroll_callback(window, xoffset, yoffset)
 
     def register_all_demos(self):
         from .lec1_01_triangle.demo import Lecture01_TriangleDemo
@@ -91,14 +105,19 @@ class ProxyDemo(Demo):
             self.demos.append( (demo.demo_id, demo) )
 
     def render_loop(self, window):
-        # GLFW allows multiple windows, select this window as active
-        glfw.make_context_current(window)
-
         # infinite render loop, until the window is requested to close
         while not glfw.window_should_close(window):
-            self.current_demo.render_frame(window) # draw to memory
-            glfw.swap_buffers(window) # flush what was drawn to the screen pixels
+            width, height = glfw.get_framebuffer_size(window)
+            self.current_demo.render_frame(window, width, height) # draw to memory
+            glfw.swap_buffers(window) # flush from memory to the screen pixels
             glfw.poll_events()        # handle keyboard/mouse/window events
+
+    def load(self, window):
+        self.current_demo.load(window)
+        glfw_set_input_callbacks(window=window,
+            keyboard_callback=self.keyboard_callback,
+            mouse_button_callback=self.mouse_button_callback,
+            mouse_scroll_callback=self.mouse_scroll_callback)
 
 
 
