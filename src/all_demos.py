@@ -5,16 +5,13 @@ import sys, os
 class Demo:
     def __init__(self, ui_defaults):
         self.ui_defaults = ui_defaults
+        self.is_loaded = False
 
     @property
     def demo_id(self) -> str:
         path = os.path.abspath(sys.modules[self.__class__.__module__].__file__)
         folder_name = os.path.normpath(path).split(os.path.sep)[-2]
         return folder_name
-
-    @property
-    def is_loaded(self) -> bool:
-        return True
 
     def keyboard_callback(self, window, key, scancode, action, mods):
         pass
@@ -29,10 +26,10 @@ class Demo:
         pass
 
     def load(self, window):
-        pass
+        self.is_loaded = True
 
     def unload(self):
-        pass
+        self.is_loaded = False
 
 # A wrapper class to import all separate demos
 # and render them in one window with convenient switching between demos
@@ -94,11 +91,11 @@ class ProxyDemo(Demo):
         self.current_demo.mouse_scroll_callback(window, xoffset, yoffset)
 
     def register_all_demos(self):
+        from .lec1_00_clear_color.demo   import Lecture01_ColorDemo
         from .lec1_01_triangle.demo import Lecture01_TriangleDemo
-        from .lec1_02_cube.demo import Lecture01_CubeDemo
-        from .lec2.demo import Lecture02_Demo
+        from .lec1_02_cube.demo     import Lecture01_CubeDemo
 
-        classes = [Lecture01_TriangleDemo, Lecture01_CubeDemo, Lecture02_Demo]
+        classes = [Lecture01_ColorDemo, Lecture01_TriangleDemo, Lecture01_CubeDemo]
         self.demos = []
         for demo_class in classes:
             demo = demo_class()
@@ -108,8 +105,9 @@ class ProxyDemo(Demo):
         # infinite render loop, until the window is requested to close
         while not glfw.window_should_close(window):
             width, height = glfw.get_framebuffer_size(window)
-            self.current_demo.render_frame(window, width, height) # draw to memory
-            glfw.swap_buffers(window) # flush from memory to the screen pixels
+            if self.current_demo.is_loaded:
+                self.current_demo.render_frame(window, width, height) # draw to memory
+                glfw.swap_buffers(window) # flush from memory to the screen pixels
             glfw.poll_events()        # handle keyboard/mouse/window events
 
     def load(self, window):

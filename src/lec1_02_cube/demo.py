@@ -17,24 +17,20 @@ class Lecture01_CubeDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
-        self._is_loaded = False
-
-    @property
-    def is_loaded(self):
-        return self._is_loaded
 
     def load(self, window):
         super().load(window)
         self.make_shader()
         self.make_vertex_data()
         self.make_fragment_data()
-        self._is_loaded = True
+        self.is_loaded = True
 
     def unload(self):
         super().unload()
         if not self.is_loaded:
             return
-        
+        self.is_loaded = False
+
         glDeleteVertexArrays(1, [self.vao])
         glDeleteBuffers(2, [self.vbo, self.ebo])
         glDeleteProgram(self.shader_program)
@@ -42,16 +38,14 @@ class Lecture01_CubeDemo(Demo):
         glDeleteShader(self.fragment_shader)
         del self.vao, self.vbo, self.ebo
         del self.shader_program, self.vertex_shader, self.fragment_shader
-        # delete texture
-        self._is_loaded = False
+        # TODO: delete texture
 
     def render_frame(self, window, width, height):
-        if self.is_loaded:
-            glClearColor(1,1,1,1)
-            glClear(GL_COLOR_BUFFER_BIT)
-            glUseProgram(self.shader_program)
-            glBindVertexArray(self.vao)
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
+        glClearColor(1,1,1,1)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glUseProgram(self.shader_program)
+        glBindVertexArray(self.vao)
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
 
         super().render_frame(window, width, height)
 
