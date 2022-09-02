@@ -14,7 +14,7 @@ class Lecture01_TriangleDemo(Demo):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
 
-    def render_frame(self, window, width, height):
+    def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(1,0,0,1)
         glClear(GL_COLOR_BUFFER_BIT)
 

@@ -1,3 +1,4 @@
+import time
 from .common.window import *
 import sys, os
 
@@ -22,7 +23,7 @@ class Demo:
     def mouse_scroll_callback(self, window, xoffset, yoffset):
         pass
 
-    def render_frame(self, window, width, height):
+    def render_frame(self, width, height, global_time_sec, delta_time_sec):
         pass
 
     def load(self, window):
@@ -92,8 +93,8 @@ class ProxyDemo(Demo):
 
     def register_all_demos(self):
         from .lec1_00_clear_color.demo   import Lecture01_ColorDemo
-        from .lec1_01_triangle.demo import Lecture01_TriangleDemo
-        from .lec1_02_cube.demo     import Lecture01_CubeDemo
+        from .lec1_01_triangle.demo      import Lecture01_TriangleDemo
+        from .lec1_02_cube.demo          import Lecture01_CubeDemo
 
         classes = [Lecture01_ColorDemo, Lecture01_TriangleDemo, Lecture01_CubeDemo]
         self.demos = []
@@ -102,12 +103,17 @@ class ProxyDemo(Demo):
             self.demos.append( (demo.demo_id, demo) )
 
     def render_loop(self, window):
+        last_time_sec = float('inf')
+
         # infinite render loop, until the window is requested to close
         while not glfw.window_should_close(window):
             width, height = glfw.get_framebuffer_size(window)
+            global_time_sec = time.time()
             if self.current_demo.is_loaded:
-                self.current_demo.render_frame(window, width, height) # draw to memory
+                delta_time_sec = min(global_time_sec - last_time_sec, 1e-5)
+                self.current_demo.render_frame(width, height, global_time_sec, delta_time_sec) # draw to memory
                 glfw.swap_buffers(window) # flush from memory to the screen pixels
+                last_time_sec = global_time_sec
             glfw.poll_events()        # handle keyboard/mouse/window events
 
     def load(self, window):

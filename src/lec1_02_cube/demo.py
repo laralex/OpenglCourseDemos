@@ -40,15 +40,12 @@ class Lecture01_CubeDemo(Demo):
         del self.shader_program, self.vertex_shader, self.fragment_shader
         # TODO: delete texture
 
-    def render_frame(self, window, width, height):
+    def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(1,1,1,1)
         glClear(GL_COLOR_BUFFER_BIT)
         glUseProgram(self.shader_program)
         glBindVertexArray(self.vao)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
-
-        super().render_frame(window, width, height)
-
 
     def make_shader(self):
         vertex_shader_code = """
