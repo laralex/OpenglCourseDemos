@@ -58,4 +58,4 @@ class GpuTexture:
 
     def __del__(self):
         if getattr(self, 'gpu_id', None):
-            glDeleteTextures([self.gpu_id])
+            glDeleteTextures(np.array([self.gpu_id], dtype=np.uint32))

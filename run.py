@@ -20,7 +20,7 @@ def main():
         raise SystemError("Can't initialize windowing library GLFW")
 
     try:
-        window = glfw_create_window('OpenGL Course Demos', window_size=(512, 512))
+        window = glfw_create_window('OpenGL Course Demos', window_size=(800, 600))
 
         # OpenGL commands can be called from one and only thread
         # this commands marks the current thread as the drawing one

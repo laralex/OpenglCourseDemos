@@ -34,10 +34,10 @@ class Demo:
         pass
 
     def load(self, window):
-        self.is_loaded = True
+        pass
 
     def unload(self):
-        self.is_loaded = False
+        pass
 
 
 # A wrapper class to import all separate demos
@@ -65,12 +65,12 @@ class ProxyDemo(Demo):
     def load_current_demo(self, window):
         demo_fp = inspect.getfile(self.current_demo.__class__)
         demo_dp = os.path.dirname(demo_fp)
-        print(demo_dp)
+        print('> Loading demo', demo_dp)
         os.chdir(demo_dp)
         self.current_demo.load(window)
         self.windowed_position = glfw.get_window_pos(window)
         self.windowed_size = glfw.get_window_size(window)
-        self.window_size_callback(window, *self.windowed_position)
+        self.window_size_callback(window, *self.windowed_size)
 
     def keyboard_callback(self, window, key, scancode, action, mods):
         super().keyboard_callback(window, key, scancode, action, mods)
@@ -133,7 +133,7 @@ class ProxyDemo(Demo):
             width, height = glfw.get_framebuffer_size(window)
             global_time_sec = time.time()
             if self.current_demo.is_loaded:
-                delta_time_sec = min(global_time_sec - last_time_sec, 1e-5)
+                delta_time_sec = max(global_time_sec - last_time_sec, 1e-5)
                 self.current_demo.render_frame(width, height, global_time_sec, delta_time_sec) # draw to memory
                 glfw.swap_buffers(window) # flush from memory to the screen pixels
                 last_time_sec = global_time_sec

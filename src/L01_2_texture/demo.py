@@ -66,7 +66,7 @@ class Lecture01_TextureDemo(Demo):
         glAttachShader(self.shader_program, self.vertex_shader)
         glAttachShader(self.shader_program, self.fragment_shader)
 
-        glBindFragDataLocation(self.shader_program, 0, "out_color")
+        glBindFragDataLocation(self.shader_program, 0, b"out_color")
 
         glLinkProgram(self.shader_program)
 
@@ -148,18 +148,18 @@ class Lecture01_TextureDemo(Demo):
 
 
     def unload(self):
-        super().unload()
         if not self.is_loaded:
             return
         self.is_loaded = False
 
-        glDeleteVertexArrays(1, [self.vao])
-        glDeleteBuffers(2, [self.vbo, self.ebo])
+        glDeleteVertexArrays(1, np.asarray([self.vao]))
+        glDeleteBuffers(2, np.asarray([self.vbo, self.ebo]))
         glDeleteProgram(self.shader_program)
         glDeleteShader(self.vertex_shader)
         glDeleteShader(self.fragment_shader)
         del self.vao, self.vbo, self.ebo
         del self.shader_program, self.vertex_shader, self.fragment_shader
+        super().unload()
         # TODO: delete texture
 
     def get_shader_log(self, shader):

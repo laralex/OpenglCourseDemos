@@ -1,13 +1,9 @@
 from dataclasses import dataclass
-from pickle import FALSE
-from typing import overload
-from ..common import parse_json, window
-from ..common.gl_texture import GpuTexture
-from ..all_demos import Demo
-from OpenGL.GL import *
-from PIL import Image
-import sys
 import numpy as np
+import glfw
+from ..all_demos import Demo
+from ..common.defines import *
+from OpenGL.GL import *
 
 @dataclass
 class UiDefaults:
@@ -17,9 +13,9 @@ class Lecture01_TriangleDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
-        
+
     def load(self, window):
-        super().load(window)
+        self.draw_mode = GL_TRIANGLES
         self.make_shader()
         self.make_vertex_data()
         self.is_loaded = True
@@ -28,44 +24,42 @@ class Lecture01_TriangleDemo(Demo):
         vertex_shader_code = """
             #version 150 core
             in vec2 a_position;
-            in vec2 a_texcoord;
+            in vec3 a_color;
 
-            out vec2 v_texcoord;
+            out vec3 v_color;
 
             void main()
             {
-                v_texcoord = a_texcoord;
-                gl_Position = vec4(a_position, 1.0, 1.0);
+                v_color = a_color;
+                gl_Position = vec4(a_position, 0.0, 1.0);
             }
         """
 
         fragment_shader_code = """
             #version 150 core
-            in vec2 v_texcoord;
+            in vec3 v_color;
 
-            out vec4 out_color;
-
-            uniform sampler2D color_texture;
+            out vec3 out_color;
 
             void main()
             {
-                out_color = texture(color_texture, v_texcoord);
+                out_color = v_color;
             }
         """
 
         self.vertex_shader = glCreateShader(GL_VERTEX_SHADER)
-        glShaderSource(self.vertex_shader, [vertex_shader_code])
+        glShaderSource(self.vertex_shader, vertex_shader_code)
         glCompileShader(self.vertex_shader)
 
         self.fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
-        glShaderSource(self.fragment_shader, [fragment_shader_code])
+        glShaderSource(self.fragment_shader, fragment_shader_code)
         glCompileShader(self.fragment_shader)
 
         self.shader_program = glCreateProgram()
         glAttachShader(self.shader_program, self.vertex_shader)
         glAttachShader(self.shader_program, self.fragment_shader)
 
-        glBindFragDataLocation(self.shader_program, 0, "out_color")
+        glBindFragDataLocation(self.shader_program, 0, b"out_color")
 
         glLinkProgram(self.shader_program)
 
@@ -73,95 +67,93 @@ class Lecture01_TriangleDemo(Demo):
 
 
     def check_shader_compilation(self):
-        vertex_compilation_log   = glGetShaderInfoLog(self.vertex_shader)
-        fragment_compilation_log = glGetShaderInfoLog(self.fragment_shader)
-        shader_linking_log       = glGetProgramInfoLog(self.shader_program)
-        if vertex_compilation_log != "":
-            raise Exception(f"Vertex shader didn't compile with error: {vertex_compilation_log}")
-        if fragment_compilation_log != "":
-            raise Exception(f"Fragment shader didn't compile with error: {fragment_compilation_log}")
-        if shader_linking_log != "":
-            raise Exception(f"Shader program didn't compile with error: {shader_linking_log}")
+        if not glGetShaderiv(self.vertex_shader, GL_COMPILE_STATUS):
+            error = glGetShaderInfoLog(self.vertex_shader)
+            raise Exception(f"Vertex shader didn't compile with error: {error}")
+        if not glGetShaderiv(self.fragment_shader, GL_COMPILE_STATUS):
+            error = glGetShaderInfoLog(self.fragment_shader)
+            raise Exception(f"Fragment shader didn't compile with error: {error}")
+        if not glGetProgramiv(self.shader_program, GL_LINK_STATUS):
+            error = glGetProgramInfoLog(self.shader_program)
+            raise Exception(f"Shader program didn't compile with error: {error}")
 
     def make_vertex_data(self):
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
-
-        vertices = np.ascontiguousarray([
-            -0.5,  0.5,  0.0,  0.0,
-             0.0,  0.0,  1.0,  0.0,
-             0.5, -0.5,  1.0,  1.0,
-            -0.5, -0.5,  0.0,  1.0
-        ], dtype=np.float32)
-
-        self.vbo = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
-
         glUseProgram(self.shader_program)
 
-        float_size = vertices.itemsize
-        vertices_stride_bytes = 4*float_size
+        positions = np.array((
+             0.0,  0.5,
+             0.5, -0.5,
+            -0.5, -0.5,
+        ), dtype=np.float32, order='C')
+
+        float_nbytes = positions.itemsize # 4
+
+        colors = np.array((
+             1.0, 0.0, 0.0,
+             0.0, 1.0, 0.0,
+             0.0, 0.0, 1.0,
+        ), dtype=np.float32, order='C')
+
+        # send data to GPU
+        self.gpu_positions, self.gpu_colors = glGenBuffers(2)
+        glBindBuffer(GL_ARRAY_BUFFER, self.gpu_positions)
+        glBufferData(GL_ARRAY_BUFFER, positions.nbytes, positions, GL_STATIC_DRAW)
+
+        # connect a shader variable and vertex data
         position_attribute = glGetAttribLocation(self.shader_program, "a_position")
         glEnableVertexAttribArray(position_attribute)
-        glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE,
-                            vertices_stride_bytes, 0)
+        glVertexAttribPointer(position_attribute,
+            2, # how many values (1-4) to read after jump
+            GL_FLOAT, # 4 bytes per value
+            GL_FALSE, # no normalization
+            2*float_nbytes, # stride (jump size in bytes when iterating data)
+            None # offset in the data
+        )
 
-        tex_coord_attribute = glGetAttribLocation(self.shader_program, "a_texcoord")
-        glEnableVertexAttribArray(tex_coord_attribute);
-        glVertexAttribPointer(tex_coord_attribute, 2, GL_FLOAT, GL_FALSE,
-                            vertices_stride_bytes, 2*float_size)
+        # same for colors
+        glBindBuffer(GL_ARRAY_BUFFER, self.gpu_colors)
+        glBufferData(GL_ARRAY_BUFFER, colors.nbytes, colors, GL_STATIC_DRAW)
 
-        # index array
-        indices = np.ascontiguousarray([
-             0, 1, 3,
-             1, 2, 3,
-        ], dtype=np.int32)
+        color_attribute = glGetAttribLocation(self.shader_program, "a_color")
+        glEnableVertexAttribArray(color_attribute)
+        glVertexAttribPointer(color_attribute,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            3*float_nbytes,
+            None)
 
-        self.ebo = glGenBuffers(1)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices, GL_STATIC_DRAW)
-
-        glBindVertexArray(0)
 
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
-        glClearColor(1,1,1,1)
+        glClearColor(0,0,0,1)
         glClear(GL_COLOR_BUFFER_BIT)
+        
+        # use shader and vertex data to draw triangles
         glUseProgram(self.shader_program)
         glBindVertexArray(self.vao)
-        glLineWidth(10)
-        # glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, 0)
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
+        glDrawArrays(self.draw_mode, 0, 3)
 
+    def keyboard_callback(self, window, key, scancode, action, mods):
+        if (key, action) == (glfw.KEY_T, glfw.PRESS):
+            if self.draw_mode == GL_TRIANGLES:
+                self.draw_mode = GL_LINE_LOOP
+            else:
+                self.draw_mode = GL_TRIANGLES
+        return super().keyboard_callback(window, key, scancode, action, mods)
 
     def unload(self):
-        super().unload()
         if not self.is_loaded:
             return
-        self.is_loaded = False
 
-        glDeleteVertexArrays(1, [self.vao])
-        glDeleteBuffers(2, [self.vbo, self.ebo])
+        glDeleteVertexArrays(1, np.asarray([self.vao]))
+        glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_colors]))
         glDeleteProgram(self.shader_program)
         glDeleteShader(self.vertex_shader)
         glDeleteShader(self.fragment_shader)
-        del self.vao, self.vbo, self.ebo
+        del self.gpu_positions, self.gpu_colors
         del self.shader_program, self.vertex_shader, self.fragment_shader
-        # TODO: delete texture
-
-    def get_shader_log(self, shader):
-        '''Return the shader log'''
-        return self.get_log(shader, glGetShaderInfoLog)
-
-    def get_program_log(self, shader):
-        '''Return the program log'''
-        return self.get_log(shader, glGetProgramInfoLog)
-
-    def get_log(self, obj, func):
-        value = func(obj)
-        return value
-
-
-
+        super().unload()
 
 

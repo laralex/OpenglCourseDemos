@@ -6,11 +6,13 @@ class Lecture01_ColorDemo(Demo):
     def __init__(self):
         super().__init__(ui_defaults=None)
 
+    def load(self, window):
+        self.is_loaded = True
+
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
-        # oscillating values between 0 and 1
-        red   = (math.sin(1.29*global_time_sec) + 1.0) * 0.5
-        green = (math.sin(1.51*global_time_sec) + 1.0) * 0.5
-        blue  = (math.sin(1.37*global_time_sec) + 1.0) * 0.5
+        red   = 0.5*math.sin(global_time_sec) + 0.5
+        green = 0.5*math.cos(global_time_sec*1.3) + 0.5
+        blue  = 0.5
         glClearColor(red,green,blue,1)
         glClear(GL_COLOR_BUFFER_BIT)
 
