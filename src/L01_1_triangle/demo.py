@@ -1,33 +1,25 @@
-from dataclasses import dataclass
 import numpy as np
-import glfw
 from ..all_demos import Demo
 from ..common.defines import *
 from OpenGL.GL import *
 
-@dataclass
-class UiDefaults:
-    color: int
-
 class Lecture01_TriangleDemo(Demo):
     def __init__(self):
-        #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
 
     def load(self, window):
-        self.draw_mode = GL_TRIANGLES
         self.make_shader()
         self.make_vertex_data()
         self.is_loaded = True
 
     def make_shader(self):
+        # GLSL code
         vertex_shader_code = """
             #version 150 core
             in vec2 a_position;
             in vec3 a_color;
 
             out vec3 v_color;
-
             void main()
             {
                 v_color = a_color;
@@ -83,6 +75,7 @@ class Lecture01_TriangleDemo(Demo):
         glUseProgram(self.shader_program)
 
         positions = np.array((
+            # X     Y
              0.0,  0.5,
              0.5, -0.5,
             -0.5, -0.5,
@@ -91,6 +84,7 @@ class Lecture01_TriangleDemo(Demo):
         float_nbytes = positions.itemsize # 4
 
         colors = np.array((
+            # R    G    B
              1.0, 0.0, 0.0,
              0.0, 1.0, 0.0,
              0.0, 0.0, 1.0,
@@ -129,19 +123,11 @@ class Lecture01_TriangleDemo(Demo):
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(0,0,0,1)
         glClear(GL_COLOR_BUFFER_BIT)
-        
+
         # use shader and vertex data to draw triangles
         glUseProgram(self.shader_program)
         glBindVertexArray(self.vao)
-        glDrawArrays(self.draw_mode, 0, 3)
-
-    def keyboard_callback(self, window, key, scancode, action, mods):
-        if (key, action) == (glfw.KEY_T, glfw.PRESS):
-            if self.draw_mode == GL_TRIANGLES:
-                self.draw_mode = GL_LINE_LOOP
-            else:
-                self.draw_mode = GL_TRIANGLES
-        return super().keyboard_callback(window, key, scancode, action, mods)
+        glDrawArrays(GL_TRIANGLES, 0, 3)
 
     def unload(self):
         if not self.is_loaded:
