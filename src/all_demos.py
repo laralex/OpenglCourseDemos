@@ -1,6 +1,10 @@
+from ast import Pass
 import time
 from .common.window import *
 import sys, os
+from .common.defines import *
+from OpenGL.GL import *
+import inspect
 
 # Base class for lecture and homework demos
 class Demo:
@@ -23,6 +27,9 @@ class Demo:
     def mouse_scroll_callback(self, window, xoffset, yoffset):
         pass
 
+    def window_size_callback(self, window, width, height):
+        pass
+
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         pass
 
@@ -31,6 +38,7 @@ class Demo:
 
     def unload(self):
         self.is_loaded = False
+
 
 # A wrapper class to import all separate demos
 # and render them in one window with convenient switching between demos
@@ -53,6 +61,16 @@ class ProxyDemo(Demo):
     @property
     def current_demo_id(self):
         return self.demos[self.current_demo_idx][0]
+
+    def load_current_demo(self, window):
+        demo_fp = inspect.getfile(self.current_demo.__class__)
+        demo_dp = os.path.dirname(demo_fp)
+        print(demo_dp)
+        os.chdir(demo_dp)
+        self.current_demo.load(window)
+        self.windowed_position = glfw.get_window_pos(window)
+        self.windowed_size = glfw.get_window_size(window)
+        self.window_size_callback(window, *self.windowed_position)
 
     def keyboard_callback(self, window, key, scancode, action, mods):
         super().keyboard_callback(window, key, scancode, action, mods)
@@ -79,7 +97,7 @@ class ProxyDemo(Demo):
         if changed_demo:
             running_demo.unload()
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
-            self.current_demo.load(window)
+            self.load_current_demo()
         else:
             self.current_demo.keyboard_callback(window, key, scancode, action, mods)
 
@@ -91,12 +109,18 @@ class ProxyDemo(Demo):
         super().mouse_scroll_callback(window, xoffset, yoffset)
         self.current_demo.mouse_scroll_callback(window, xoffset, yoffset)
 
-    def register_all_demos(self):
-        from .lec1_00_clear_color.demo   import Lecture01_ColorDemo
-        from .lec1_01_triangle.demo      import Lecture01_TriangleDemo
-        from .lec1_02_cube.demo          import Lecture01_CubeDemo
+    def window_size_callback(self, window, width, height):
+        super().window_size_callback(window, width, height)
+        glViewport(0, 0, width, height)
+        print('Viewport', width, height)
+        self.current_demo.window_size_callback(window, width, height)
 
-        classes = [Lecture01_ColorDemo, Lecture01_TriangleDemo, Lecture01_CubeDemo]
+    def register_all_demos(self):
+        from .L01_0_clear_color.demo   import Lecture01_ColorDemo
+        from .L01_1_triangle.demo      import Lecture01_TriangleDemo
+        from .L01_2_texture.demo       import Lecture01_TextureDemo
+
+        classes = [Lecture01_ColorDemo, Lecture01_TriangleDemo, Lecture01_TextureDemo]
         self.demos = []
         for demo_class in classes:
             demo = demo_class()
@@ -117,11 +141,15 @@ class ProxyDemo(Demo):
             glfw.poll_events()        # handle keyboard/mouse/window events
 
     def load(self, window):
-        self.current_demo.load(window)
+        self.load_current_demo(window)
         glfw_set_input_callbacks(window=window,
             keyboard_callback=self.keyboard_callback,
             mouse_button_callback=self.mouse_button_callback,
             mouse_scroll_callback=self.mouse_scroll_callback)
+        glfw_set_window_callbacks(window,
+            window_size_callback=self.window_size_callback)
+
+
 
 
 

@@ -13,39 +13,16 @@ import numpy as np
 class UiDefaults:
     color: int
 
-class Lecture01_CubeDemo(Demo):
+class Lecture01_TriangleDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
-
+        
     def load(self, window):
         super().load(window)
         self.make_shader()
         self.make_vertex_data()
-        self.make_fragment_data()
         self.is_loaded = True
-
-    def unload(self):
-        super().unload()
-        if not self.is_loaded:
-            return
-        self.is_loaded = False
-
-        glDeleteVertexArrays(1, [self.vao])
-        glDeleteBuffers(2, [self.vbo, self.ebo])
-        glDeleteProgram(self.shader_program)
-        glDeleteShader(self.vertex_shader)
-        glDeleteShader(self.fragment_shader)
-        del self.vao, self.vbo, self.ebo
-        del self.shader_program, self.vertex_shader, self.fragment_shader
-        # TODO: delete texture
-
-    def render_frame(self, width, height, global_time_sec, delta_time_sec):
-        glClearColor(1,1,1,1)
-        glClear(GL_COLOR_BUFFER_BIT)
-        glUseProgram(self.shader_program)
-        glBindVertexArray(self.vao)
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
 
     def make_shader(self):
         vertex_shader_code = """
@@ -58,7 +35,7 @@ class Lecture01_CubeDemo(Demo):
             void main()
             {
                 v_texcoord = a_texcoord;
-                gl_Position = vec4(a_position, 0.0, 1.0);
+                gl_Position = vec4(a_position, 1.0, 1.0);
             }
         """
 
@@ -77,35 +54,42 @@ class Lecture01_CubeDemo(Demo):
         """
 
         self.vertex_shader = glCreateShader(GL_VERTEX_SHADER)
-        glShaderSource(self.vertex_shader, vertex_shader_code)
+        glShaderSource(self.vertex_shader, [vertex_shader_code])
         glCompileShader(self.vertex_shader)
 
         self.fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
-        glShaderSource(self.fragment_shader, fragment_shader_code)
+        glShaderSource(self.fragment_shader, [fragment_shader_code])
         glCompileShader(self.fragment_shader)
 
         self.shader_program = glCreateProgram()
         glAttachShader(self.shader_program, self.vertex_shader)
         glAttachShader(self.shader_program, self.fragment_shader)
 
-        print('v', self.get_shader_log(self.vertex_shader))
-        print('f', self.get_shader_log(self.fragment_shader))
-        print('p', self.get_program_log(self.shader_program))
-
         glBindFragDataLocation(self.shader_program, 0, "out_color")
 
         glLinkProgram(self.shader_program)
-        glUseProgram(self.shader_program)
 
+        self.check_shader_compilation()
+
+
+    def check_shader_compilation(self):
+        vertex_compilation_log   = glGetShaderInfoLog(self.vertex_shader)
+        fragment_compilation_log = glGetShaderInfoLog(self.fragment_shader)
+        shader_linking_log       = glGetProgramInfoLog(self.shader_program)
+        if vertex_compilation_log != "":
+            raise Exception(f"Vertex shader didn't compile with error: {vertex_compilation_log}")
+        if fragment_compilation_log != "":
+            raise Exception(f"Fragment shader didn't compile with error: {fragment_compilation_log}")
+        if shader_linking_log != "":
+            raise Exception(f"Shader program didn't compile with error: {shader_linking_log}")
 
     def make_vertex_data(self):
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
-        print(self.vao)
 
         vertices = np.ascontiguousarray([
             -0.5,  0.5,  0.0,  0.0,
-             0.5,  0.5,  1.0,  0.0,
+             0.0,  0.0,  1.0,  0.0,
              0.5, -0.5,  1.0,  1.0,
             -0.5, -0.5,  0.0,  1.0
         ], dtype=np.float32)
@@ -113,6 +97,8 @@ class Lecture01_CubeDemo(Demo):
         self.vbo = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
         glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+
+        glUseProgram(self.shader_program)
 
         float_size = vertices.itemsize
         vertices_stride_bytes = 4*float_size
@@ -138,15 +124,30 @@ class Lecture01_CubeDemo(Demo):
 
         glBindVertexArray(0)
 
+    def render_frame(self, width, height, global_time_sec, delta_time_sec):
+        glClearColor(1,1,1,1)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glUseProgram(self.shader_program)
+        glBindVertexArray(self.vao)
+        glLineWidth(10)
+        # glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, 0)
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
 
-    def make_fragment_data(self):
-        # The fragrament shader uses rasterized texture coordinates `v_texcoord`
-        # connect texture and the shader, so that we can render pixels with texture values
-        cube_texture = GpuTexture(cpu_image=Image.open('src/lec1_02_cube/texture.jpeg'))
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, cube_texture.gpu_id)
-        uniTex = glGetUniformLocation(self.shader_program, "tex")
-        glUniform1i(uniTex, 0)
+
+    def unload(self):
+        super().unload()
+        if not self.is_loaded:
+            return
+        self.is_loaded = False
+
+        glDeleteVertexArrays(1, [self.vao])
+        glDeleteBuffers(2, [self.vbo, self.ebo])
+        glDeleteProgram(self.shader_program)
+        glDeleteShader(self.vertex_shader)
+        glDeleteShader(self.fragment_shader)
+        del self.vao, self.vbo, self.ebo
+        del self.shader_program, self.vertex_shader, self.fragment_shader
+        # TODO: delete texture
 
     def get_shader_log(self, shader):
         '''Return the shader log'''

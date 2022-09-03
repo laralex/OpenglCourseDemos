@@ -9,6 +9,7 @@ def glfw_create_window(window_name, window_size=(512, 512)):
     glfw.window_hint(glfw.CLIENT_API, glfw.OPENGL_API)
     glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
     # Single buffer mode:
     # - OpenGL allocates 1 memory storage
@@ -27,7 +28,7 @@ def glfw_create_window(window_name, window_size=(512, 512)):
 
     if sys.platform.startswith('darwin'):
         # For operating systems from Apple
-        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, True);
+        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, True)
 
     return window
 
