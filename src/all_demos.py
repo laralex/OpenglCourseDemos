@@ -97,7 +97,7 @@ class ProxyDemo(Demo):
         if changed_demo:
             running_demo.unload()
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
-            self.load_current_demo()
+            self.load_current_demo(window)
         else:
             self.current_demo.keyboard_callback(window, key, scancode, action, mods)
 
@@ -112,7 +112,6 @@ class ProxyDemo(Demo):
     def window_size_callback(self, window, width, height):
         super().window_size_callback(window, width, height)
         glViewport(0, 0, width, height)
-        print('Viewport', width, height)
         self.current_demo.window_size_callback(window, width, height)
 
     def register_all_demos(self):
