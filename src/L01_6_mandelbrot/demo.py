@@ -58,6 +58,9 @@ class Lecture01_MandelbrotDemo(Demo):
         glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
         glGenerateMipmap(target)
         return texture_id
 
@@ -122,7 +125,7 @@ class Lecture01_MandelbrotDemo(Demo):
         glUniform1f(uniform_aspect, width / height)
 
         uniform_aspect = glGetUniformLocation(shader_id, "u_zoom")
-        self.zoom /= 1.002
+        self.zoom /= 1.003
         glUniform1f(uniform_aspect, self.zoom)
 
         glBindVertexArray(self.vao)

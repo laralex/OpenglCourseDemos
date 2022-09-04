@@ -1,7 +1,7 @@
 #version 330 core
 
-#define N_CONVERGENCE_STEPS 100
-#define THRESHOLD 256.0
+#define N_CONVERGENCE_STEPS 80
+#define THRESHOLD 4.0
 
 precision highp float;
 in vec2 v_screen_coords;
