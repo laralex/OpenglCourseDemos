@@ -13,7 +13,7 @@ import pyrr
 class UiDefaults:
     color: int
 
-class Lecture01_TransformDemo(Demo):
+class Lecture02_CubeDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
@@ -22,6 +22,10 @@ class Lecture01_TransformDemo(Demo):
         super().load(window)
         self.make_shader()
         self.make_vertex_data()
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
+
         self.is_loaded = True
 
     def make_shader(self):
@@ -32,6 +36,8 @@ class Lecture01_TransformDemo(Demo):
         self.texture = GpuTexture(cpu_image=Image.open('../textures/crate_color.jpeg'))
 
         self.shader.use()
+
+        # Very important to enable Z-buffer, to prevent overdrawing of triangles
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
         uniform_texture = glGetUniformLocation(self.shader.shader_program, "u_texture")
@@ -43,17 +49,81 @@ class Lecture01_TransformDemo(Demo):
         glBindVertexArray(self.vao)
 
         positions = np.array((
-            # X     Y
-            -0.5, -0.5,
-            -0.5,  0.5,
-             0.5, -0.5,
-             0.5,  0.5,
+            # X    Y    Z
+            -1.0,-1.0,-1.0, # triangle 1 : begin
+            -1.0,-1.0, 1.0,
+            -1.0, 1.0, 1.0, # triangle 1 : end
+             1.0, 1.0,-1.0, # triangle 2 : begin
+            -1.0,-1.0,-1.0,
+            -1.0, 1.0,-1.0, # triangle 2 : end
+             1.0,-1.0, 1.0,
+            -1.0,-1.0,-1.0,
+             1.0,-1.0,-1.0,
+             1.0, 1.0,-1.0,
+             1.0,-1.0,-1.0,
+            -1.0,-1.0,-1.0,
+            -1.0,-1.0,-1.0,
+            -1.0, 1.0, 1.0,
+            -1.0, 1.0,-1.0,
+             1.0,-1.0, 1.0,
+            -1.0,-1.0, 1.0,
+            -1.0,-1.0,-1.0,
+            -1.0, 1.0, 1.0,
+            -1.0,-1.0, 1.0,
+             1.0,-1.0, 1.0,
+             1.0, 1.0, 1.0,
+             1.0,-1.0,-1.0,
+             1.0, 1.0,-1.0,
+             1.0,-1.0,-1.0,
+             1.0, 1.0, 1.0,
+             1.0,-1.0, 1.0,
+             1.0, 1.0, 1.0,
+             1.0, 1.0,-1.0,
+            -1.0, 1.0,-1.0,
+             1.0, 1.0, 1.0,
+            -1.0, 1.0,-1.0,
+            -1.0, 1.0, 1.0,
+             1.0, 1.0, 1.0,
+            -1.0, 1.0, 1.0,
+             1.0,-1.0, 1.0
         ), dtype=np.float32, order='C')
 
         float_nbytes = positions.itemsize # 4
 
         texture_coords = np.array((
             # U    V
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
+             0.0, 1.0,
+             0.0, 0.0,
+             1.0, 1.0,
+             1.0, 0.0,
              0.0, 1.0,
              0.0, 0.0,
              1.0, 1.0,
@@ -70,10 +140,10 @@ class Lecture01_TransformDemo(Demo):
         position_attribute = glGetAttribLocation(shader_id, "a_position")
         glEnableVertexAttribArray(position_attribute)
         glVertexAttribPointer(position_attribute,
-            2,
+            3,
             GL_FLOAT,
             GL_FALSE,
-            2*float_nbytes,
+            3*float_nbytes,
             None
         )
 
@@ -93,45 +163,34 @@ class Lecture01_TransformDemo(Demo):
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(0,0,0,1)
         glClear(GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         shader_id = self.shader.use()
         uniform_aspect = glGetUniformLocation(shader_id, "u_aspect_ratio")
         glUniform1f(uniform_aspect, width / height)
 
-        # === CHANGE #3
         # make rotation, scale, translation
         time_sin = np.sin(global_time_sec)
         time_cos = np.cos(global_time_sec)
 
-        scale_x = scale_y = (time_cos + 1.1) * 0.5
-        # scale = np.eye(2, dtype=np.float32)
-        scale = np.array([
-            [scale_x ,     0.0],
-            [0.0     , scale_y],
-        ], dtype=np.float32)
+        scale_all = 0.2
+        scale = pyrr.Matrix44.from_scale((scale_all, scale_all, scale_all), dtype=np.float32)
+        rotation = pyrr.Matrix44.from_eulers((time_sin, time_cos, time_sin), dtype=np.float32)
+        translation = pyrr.Matrix44.from_translation((0.0, 0.0, 0.0), dtype=np.float32)
 
-        # rotation = np.eye(2, dtype=np.float32)
-        rotation = np.array([
-            [time_sin,  time_cos],
-            [time_cos, -time_sin],
-        ], dtype=np.float32)
-
-        transform = rotation @ scale
+        transform = translation @ rotation @ scale
         uniform_transform = glGetUniformLocation(shader_id, "u_transform")
-        glUniformMatrix2fv(uniform_transform, 1, GL_FALSE, transform)
-
-        uniform_translation = glGetUniformLocation(shader_id, "u_translation")
-        translation_x, translation_y = 0.0, time_sin * 0.5
-        glUniform2f(uniform_translation, translation_x, translation_y)
+        glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
 
         glBindVertexArray(self.vao)
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glDrawArrays(GL_TRIANGLES, 0, 12*3)
 
 
     def unload(self):
         if not self.is_loaded:
             return
         self.is_loaded = False
+        glDisable(GL_DEPTH_TEST)
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_texture_coords], dtype=np.uint32))
         del self.shader

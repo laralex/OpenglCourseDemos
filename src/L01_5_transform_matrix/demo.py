@@ -23,7 +23,6 @@ class Lecture01_TransformMatrixDemo(Demo):
         self.make_shader()
         self.make_vertex_data()
         self.is_loaded = True
-        self.draw_mode = GL_TRIANGLE_STRIP
 
     def make_shader(self):
         self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
@@ -125,7 +124,7 @@ class Lecture01_TransformMatrixDemo(Demo):
         glUniformMatrix3fv(uniform_transform, 1, GL_FALSE, transform)
 
         glBindVertexArray(self.vao)
-        glDrawArrays(self.draw_mode, 0, 4)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
 
 
     def unload(self):
@@ -138,14 +137,6 @@ class Lecture01_TransformMatrixDemo(Demo):
         del self.vao, self.gpu_positions, self.gpu_texture_coords
         del self.texture
         super().unload()
-
-    def keyboard_callback(self, window, key, scancode, action, mods):
-        if (key, action) == (glfw.KEY_T, glfw.PRESS):
-            if self.draw_mode == GL_TRIANGLE_STRIP:
-                self.draw_mode = GL_LINE_STRIP
-            else:
-                self.draw_mode = GL_TRIANGLE_STRIP
-        return super().keyboard_callback(window, key, scancode, action, mods)
 
 
 

@@ -57,6 +57,8 @@ class DemosLoader(Demo):
         self.windowed_position = None
         self.windowed_size = None
 
+        self.draw_filled = True
+
     @property
     def current_demo(self):
         return self.demos[self.current_demo_idx][1]
@@ -97,6 +99,14 @@ class DemosLoader(Demo):
             enable_fullscreen=not is_fullscreen,
                 window_position=self.windowed_position,
                 window_size=self.windowed_size)
+        if (key, action) == (glfw.KEY_T, glfw.PRESS):
+            if self.draw_filled:
+                # draw lines
+                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+            else:
+                # draw filled
+                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
+            self.draw_filled = not self.draw_filled
         if changed_demo:
             running_demo.unload()
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
@@ -126,6 +136,7 @@ class DemosLoader(Demo):
         from .L01_5_transform_matrix.demo     import Lecture01_TransformMatrixDemo
         from .L01_6_mandelbrot.demo           import Lecture01_MandelbrotDemo
         from .L01_7_julia.demo                import Lecture01_JuliaDemo
+        from .L02_1_cube.demo                 import Lecture02_CubeDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -135,7 +146,9 @@ class DemosLoader(Demo):
             Lecture01_TransformDemo,
             Lecture01_TransformMatrixDemo,
             Lecture01_MandelbrotDemo,
-            Lecture01_JuliaDemo]
+            Lecture01_JuliaDemo,
+            Lecture02_CubeDemo
+        ]
 
         self.demos = []
         for demo_class in classes:
