@@ -11,7 +11,7 @@ import numpy as np
 class UiDefaults:
     color: int
 
-class Lecture01_MandelbrotDemo(Demo):
+class Lecture01_JuliaDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
@@ -121,9 +121,9 @@ class Lecture01_MandelbrotDemo(Demo):
         uniform_aspect = glGetUniformLocation(shader_id, "u_aspect_ratio")
         glUniform1f(uniform_aspect, width / height)
 
-        uniform_aspect = glGetUniformLocation(shader_id, "u_zoom")
-        self.zoom /= 1.002
-        glUniform1f(uniform_aspect, self.zoom)
+        uniform_aspect = glGetUniformLocation(shader_id, "u_c")
+        cx, cy = 0.1*np.sin(global_time_sec*1.0)-0.554, 0.1*np.sin(global_time_sec*0.1)+0.5
+        glUniform2f(uniform_aspect, cx, cy)
 
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)

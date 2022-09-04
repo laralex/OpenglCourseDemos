@@ -9,7 +9,7 @@ in vec2 v_screen_coords;
 out vec4 out_color;
 
 uniform sampler1D u_palette;
-uniform vec2 u_center;
+uniform vec2 u_c;
 
 vec2 complex_mul(vec2 a, vec2 b) {
       return vec2(a.x*b.x - a.y*b.y, 2*a.x*b.y);
@@ -17,17 +17,17 @@ vec2 complex_mul(vec2 a, vec2 b) {
 
 void main()
 {
-      vec2 c = v_screen_coords - u_center;
-      vec2 z = c;
+      vec2 z = v_screen_coords;
       int n_steps = 0;
       while(n_steps < N_CONVERGENCE_STEPS && dot(z,z) < THRESHOLD) {
-            z = complex_mul(z,z) + c;
+            z = complex_mul(z,z) + u_c;
             n_steps += 1;
       }
 
       float smooth_n_steps = float(n_steps);
 
       // to make smoother transition of colors
+      
       if (n_steps < N_CONVERGENCE_STEPS) {
         float log_zn = log(dot(z,z)) / 2;
         float nu = log(log_zn / log(2)) / log(2);
