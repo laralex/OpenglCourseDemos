@@ -57,7 +57,8 @@ class DemosLoader(Demo):
         self.windowed_position = None
         self.windowed_size = None
 
-        self.draw_filled = True
+        self.draw_modes = [GL_FILL, GL_LINE, GL_POINT]
+        self.current_draw_mode_idx = 0
 
     @property
     def current_demo(self):
@@ -100,13 +101,13 @@ class DemosLoader(Demo):
                 window_position=self.windowed_position,
                 window_size=self.windowed_size)
         if (key, action) == (glfw.KEY_T, glfw.PRESS):
-            if self.draw_filled:
-                # draw lines
-                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
-            else:
-                # draw filled
-                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL)
-            self.draw_filled = not self.draw_filled
+            self.current_draw_mode_idx += 1
+            self.current_draw_mode_idx %= len(self.draw_modes)
+            current_draw_mode = self.draw_modes[self.current_draw_mode_idx]
+            glLineWidth(3)
+            glPointSize(10)
+            glPolygonMode(GL_FRONT_AND_BACK, current_draw_mode)
+
         if changed_demo:
             running_demo.unload()
             self.current_demo_idx = (self.current_demo_idx + len(self.demos)) % (len(self.demos))
