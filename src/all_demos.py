@@ -46,10 +46,13 @@ class ProxyDemo(Demo):
     def __init__(self, ui_defaults, startup_demo_id):
         super().__init__(ui_defaults=ui_defaults)
         self.register_all_demos()
-        self.current_demo_idx = 0
+        self.current_demo_idx = -1
         for idx, (demo_id, _) in enumerate(self.demos):
             if demo_id == startup_demo_id:
                 self.current_demo_idx = idx
+        if self.current_demo_idx == -1:
+            print(f'> Failed to find demo: {startup_demo_id}. Loading the first available demo.')
+            self.current_demo_idx = 0
 
         self.windowed_position = None
         self.windowed_size = None
@@ -115,11 +118,20 @@ class ProxyDemo(Demo):
         self.current_demo.window_size_callback(window, width, height)
 
     def register_all_demos(self):
-        from .L01_0_clear_color.demo   import Lecture01_ColorDemo
-        from .L01_1_triangle.demo      import Lecture01_TriangleDemo
-        from .L01_2_texture.demo       import Lecture01_TextureDemo
+        from .L01_0_clear_color.demo          import Lecture01_ColorDemo
+        from .L01_1_triangle.demo             import Lecture01_TriangleDemo
+        from .L01_2_aspect_ratio.demo         import Lecture01_AspectRatioDemo
+        from .L01_3_texture.demo              import Lecture01_TextureDemo
+        from .L01_4_transform.demo            import Lecture01_TransformDemo
+        from .L01_5_transform_matrix.demo     import Lecture01_TransformMatrixDemo
 
-        classes = [Lecture01_ColorDemo, Lecture01_TriangleDemo, Lecture01_TextureDemo]
+        classes = [
+            Lecture01_ColorDemo,
+            Lecture01_TriangleDemo,
+            Lecture01_AspectRatioDemo,
+            Lecture01_TextureDemo,
+            Lecture01_TransformDemo,
+            Lecture01_TransformMatrixDemo]
         self.demos = []
         for demo_class in classes:
             demo = demo_class()

@@ -3,7 +3,7 @@ from ..all_demos import Demo
 from ..common.defines import *
 from OpenGL.GL import *
 
-class Lecture01_TriangleDemo(Demo):
+class Lecture01_AspectRatioDemo(Demo):
     def __init__(self):
         super().__init__(ui_defaults=None)
 
@@ -20,10 +20,17 @@ class Lecture01_TriangleDemo(Demo):
             in vec3 a_color;
 
             out vec3 v_color;
+
+            // === CHANGE #1
+            uniform float u_aspect_ratio;
+            // e.g. screen 800x600 px, aspect ratio 800/600 = 1.333
+
             void main()
             {
                 v_color = a_color;
-                gl_Position = vec4(a_position.x, a_position.y, 0.0, 1.0);
+                // gl_Position = vec4(a_position.x, a_position.y                 , 0.0, 1.0);
+                // === CHANGE #2
+                gl_Position    = vec4(a_position.x, a_position.y * u_aspect_ratio, 0.0, 1.0);
             }
         """
 
@@ -126,6 +133,12 @@ class Lecture01_TriangleDemo(Demo):
 
         # use shader and vertex data to draw triangles
         glUseProgram(self.shader_program)
+
+        # === CHANGE #3
+        uniform_aspect = glGetUniformLocation(self.shader_program, "u_aspect_ratio")
+        glUniform1f(uniform_aspect, width / height) 
+        # ===
+
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 3)
 

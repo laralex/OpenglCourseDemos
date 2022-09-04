@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from pickle import FALSE
-from typing import overload
-from ..common import parse_json, window
+import math
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..all_demos import Demo
@@ -9,12 +7,13 @@ from OpenGL.GL import *
 from PIL import Image
 import numpy as np
 import glfw
+import pyrr
 
 @dataclass
 class UiDefaults:
     color: int
 
-class Lecture01_TextureDemo(Demo):
+class Lecture01_TransformDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
@@ -27,15 +26,15 @@ class Lecture01_TextureDemo(Demo):
         self.draw_mode = GL_TRIANGLE_STRIP
 
     def make_shader(self):
-        self.shader = GpuShader('shader.vert', 'shader.frag', out_variable=b'out_color')
+        self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
 
         # The fragrament shader uses rasterized texture coordinates `v_texcoord`
         # connect texture and the shader, so that we can render pixels with texture values
-        self.texture = GpuTexture(cpu_image=Image.open('texture.jpeg'))
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
+        self.texture = GpuTexture(cpu_image=Image.open('../textures/crate_color.jpeg'))
 
         self.shader.use()
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
         uniform_texture = glGetUniformLocation(self.shader.shader_program, "u_texture")
         glUniform1i(uniform_texture, 0)
 
@@ -100,6 +99,32 @@ class Lecture01_TextureDemo(Demo):
         uniform_aspect = glGetUniformLocation(shader_id, "u_aspect_ratio")
         glUniform1f(uniform_aspect, width / height)
 
+        # === CHANGE #3
+        # make rotation, scale, translation
+        time_sin = np.sin(global_time_sec)
+        time_cos = np.cos(global_time_sec)
+
+        scale_x = scale_y = (time_cos + 1.1) * 0.5
+        # scale = np.eye(2, dtype=np.float32)
+        scale = np.array([
+            [scale_x ,     0.0],
+            [0.0     , scale_y],
+        ], dtype=np.float32)
+
+        # rotation = np.eye(2, dtype=np.float32)
+        rotation = np.array([
+            [time_sin,  time_cos],
+            [time_cos, -time_sin],
+        ], dtype=np.float32)
+
+        transform = rotation @ scale
+        uniform_transform = glGetUniformLocation(shader_id, "u_transform")
+        glUniformMatrix2fv(uniform_transform, 1, GL_FALSE, transform)
+
+        uniform_translation = glGetUniformLocation(shader_id, "u_translation")
+        translation_x, translation_y = 0.0, time_sin * 0.5
+        glUniform2f(uniform_translation, translation_x, translation_y)
+
         glBindVertexArray(self.vao)
         glDrawArrays(self.draw_mode, 0, 4)
 
@@ -108,14 +133,12 @@ class Lecture01_TextureDemo(Demo):
         if not self.is_loaded:
             return
         self.is_loaded = False
-
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_texture_coords], dtype=np.uint32))
         del self.shader
         del self.vao, self.gpu_positions, self.gpu_texture_coords
         del self.texture
         super().unload()
-        # TODO: delete texture
 
     def keyboard_callback(self, window, key, scancode, action, mods):
         if (key, action) == (glfw.KEY_T, glfw.PRESS):
