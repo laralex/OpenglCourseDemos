@@ -98,7 +98,7 @@ class Lecture01_TextureDemo(Demo):
              1.0, 0.0,
         ), dtype=np.float32, order='C')
 
-        # texture_coord.s *= 2.5
+        texture_coords *= 2.5
 
         # send data to GPU
         self.gpu_positions, self.gpu_texture_coords = glGenBuffers(2)
