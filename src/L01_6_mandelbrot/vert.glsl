@@ -1,4 +1,4 @@
-#version 330 core
+#version 150 core
 
 in vec2 a_position;
 in vec2 a_screen_coords;

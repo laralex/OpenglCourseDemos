@@ -1,4 +1,4 @@
-#version 330 core
+#version 150 core
 
 #define N_CONVERGENCE_STEPS 80
 #define THRESHOLD 4.0
@@ -29,11 +29,11 @@ void main()
 
       // to make smoother transition of colors
       if (n_steps < N_CONVERGENCE_STEPS) {
-        float log_zn = log(dot(z,z)) / 2;
-        float nu = log(log_zn / log(2)) / log(2);
+        float log_zn = log(dot(z,z)) / 2.0;
+        float nu = log(log_zn / log(2.0)) / log(2.0);
         smooth_n_steps += 1.0 - nu;
       }
 
       float pallete_coord = (n_steps == N_CONVERGENCE_STEPS ? 0.0 : smooth_n_steps) / N_CONVERGENCE_STEPS;
-      out_color = texture1D(u_palette, pallete_coord);
+      out_color = texture(u_palette, pallete_coord);
 }
