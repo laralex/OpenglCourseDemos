@@ -50,11 +50,11 @@ class GpuTexture:
         glTexParameteri(self.target, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
         # TODO: text filtering
-        glTexParameteri(self.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(self.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(self.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(self.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         # TODO: text mipmaps
-        glGenerateMipmap(self.target);
+        glGenerateMipmap(self.target)
 
     def __del__(self):
         if getattr(self, 'gpu_id', None):

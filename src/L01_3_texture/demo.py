@@ -78,13 +78,9 @@ class Lecture01_TextureDemo(Demo):
 
         # if the texture is accessed outside coordinates [0; 1],
         # the values will repeat, e.g. coordinate 2.3 will be equivalent to 0.3
-        # other options: GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+        # other options: GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
         glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
-
-        # TODO: text filtering
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         # TODO: text mipmaps
         glGenerateMipmap(target)
@@ -111,6 +107,8 @@ class Lecture01_TextureDemo(Demo):
              1.0, 1.0,
              1.0, 0.0,
         ), dtype=np.float32, order='C')
+
+        # texture_coord.s *= 2.5
 
         # send data to GPU
         self.gpu_positions, self.gpu_texture_coords = glGenBuffers(2)
