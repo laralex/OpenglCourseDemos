@@ -5,7 +5,7 @@ from typing import overload
 from ..common import parse_json, window
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
-from ..all_demos import Demo
+from ..demos_loader import Demo
 from OpenGL.GL import *
 import PIL
 import numpy as np

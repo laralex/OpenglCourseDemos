@@ -42,7 +42,7 @@ class Demo:
 
 # A wrapper class to import all separate demos
 # and render them in one window with convenient switching between demos
-class ProxyDemo(Demo):
+class DemosLoader(Demo):
     def __init__(self, ui_defaults, startup_demo_id):
         super().__init__(ui_defaults=ui_defaults)
         self.register_all_demos()
