@@ -8,10 +8,14 @@ class GpuTexture:
     def bind(self):
         glBindTexture(self.target, self.gpu_id)
 
-    def __init__(self, cpu_image: Image):
+    def __init__(self, cpu_image: Image, is_1d=False):
         assert isinstance(cpu_image, Image)
         self.width, self.height = cpu_image.size
-        self.target = GL_TEXTURE_2D
+        if is_1d:
+            self.target = GL_TEXTURE_1D
+        else:
+            self.target = GL_TEXTURE_2D
+
 
         if cpu_image.mode == 'RGB':
             cpu_format = GL_RGB
@@ -30,15 +34,27 @@ class GpuTexture:
         glBindTexture(self.target, self.gpu_id)
 
         # Send the texture data from CPU to GPU
-        glTexImage2D(self.target,
-            0,       # mip-map level we're filling in
-            GL_RGB, # how on GPU the data will be layed out
-            self.width, self.height,
-            0,      # always 0
-            cpu_format, # how on CPU we stored the `pixels` array
-            GL_UNSIGNED_BYTE, # which type of all values is in the `pixels` array
-            np.ascontiguousarray(cpu_image).flatten(), # array of channels for all pixels
-        )
+        if is_1d:
+            assert self.height == 1
+            glTexImage1D(self.target,
+                0,
+                GL_RGBA,
+                self.width,
+                0,
+                cpu_format,
+                GL_UNSIGNED_BYTE,
+                np.ascontiguousarray(cpu_image).flatten()
+            )
+        else:
+            glTexImage2D(self.target,
+                0,       # mip-map level we're filling in
+                GL_RGBA, # how on GPU the data will be layed out
+                self.width, self.height,
+                0,      # always 0
+                cpu_format, # how on CPU we stored the `pixels` array
+                GL_UNSIGNED_BYTE, # which type of all values is in the `pixels` array
+                np.ascontiguousarray(cpu_image).flatten(), # array of channels for all pixels
+            )
 
         # Function `glTexParameteri` sets 1 parameter value
         # The arguments mean : texture_type, parameter_name, parameter_value

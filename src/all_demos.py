@@ -124,6 +124,7 @@ class ProxyDemo(Demo):
         from .L01_3_texture.demo              import Lecture01_TextureDemo
         from .L01_4_transform.demo            import Lecture01_TransformDemo
         from .L01_5_transform_matrix.demo     import Lecture01_TransformMatrixDemo
+        from .L01_6_mandelbrot.demo           import Lecture01_MandelbrotDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -131,7 +132,9 @@ class ProxyDemo(Demo):
             Lecture01_AspectRatioDemo,
             Lecture01_TextureDemo,
             Lecture01_TransformDemo,
-            Lecture01_TransformMatrixDemo]
+            Lecture01_TransformMatrixDemo,
+            Lecture01_MandelbrotDemo]
+
         self.demos = []
         for demo_class in classes:
             demo = demo_class()
