@@ -27,6 +27,8 @@ void main()
 
       float smooth_n_steps = float(n_steps);
 
+      // to make smoother transition of colors
+      
       // if (n_steps < N_CONVERGENCE_STEPS) {
       //   float log_zn = log(dot(z,z)) / 2;
       //   float nu = log(log_zn / log(2)) / log(2);

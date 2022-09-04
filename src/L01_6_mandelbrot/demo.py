@@ -4,7 +4,7 @@ from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..all_demos import Demo
 from OpenGL.GL import *
-from PIL import Image
+import PIL
 import numpy as np
 
 @dataclass
@@ -20,11 +20,11 @@ class Lecture01_MandelbrotDemo(Demo):
         super().load(window)
 
         self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
-        self.texture = GpuTexture(cpu_image=Image.open('../textures/pallete_1d.png'), is_1d=True)
+        self.texture_id = self.make_gpu_texture('../textures/pallete_1d.png')
 
         self.shader.use()
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_1D, self.texture.gpu_id)
+        glBindTexture(GL_TEXTURE_1D, self.texture_id)
         uniform_texture = glGetUniformLocation(self.shader.shader_program, "u_palette")
         glUniform1i(uniform_texture, 0)
 
@@ -36,6 +36,30 @@ class Lecture01_MandelbrotDemo(Demo):
 
         self.zoom = 10.0
         self.is_loaded = True
+
+    def make_gpu_texture(self, image_path):
+        cpu_image = PIL.Image.open(image_path)
+        width, height = cpu_image.size
+
+        target = GL_TEXTURE_1D
+        texture_id = glGenTextures(1)
+        glBindTexture(target, texture_id)
+        assert height == 1
+        glTexImage1D(target,
+            0,       # mip-map level we're filling in
+            GL_RGB, # how on GPU the data will be layed out
+            width,
+            0,      # always 0
+            GL_RGB, # how on CPU we stored the `pixels` array
+            GL_UNSIGNED_BYTE, # which type of all values is in the `pixels` array
+            np.ascontiguousarray(cpu_image).flatten(), # array of channels for all pixels
+        )
+
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+        glGenerateMipmap(target)
+        return texture_id
 
     def make_vertex_data(self):
         self.vao = glGenVertexArrays(1)
@@ -111,6 +135,7 @@ class Lecture01_MandelbrotDemo(Demo):
         self.is_loaded = False
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_screen_coords], dtype=np.uint32))
+        glDeleteTextures(1, np.asarray([self.texture_id], dtype=np.uint32))
         del self.shader
         del self.vao, self.gpu_positions, self.gpu_screen_coords
         super().unload()

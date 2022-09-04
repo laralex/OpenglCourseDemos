@@ -45,14 +45,6 @@ class Lecture01_TextureDemo(Demo):
         cpu_image = PIL.Image.open(image_path)
         width, height = cpu_image.size
         target = GL_TEXTURE_2D
-
-        if cpu_image.mode == 'RGB':
-            cpu_format = GL_RGB
-        elif cpu_image.mode == 'RGBA':
-            cpu_format = GL_RGBA
-        else:
-            raise NotImplementedError('Not currently supporting other fancy image formats')
-
         # OpenGL creates a unique texture identifier (just a number) on its GPU side
         # and returns it to our CPU-side code, it's a cheap way for us 
         # to communicate to GPU which texture among all we want to use
@@ -68,7 +60,7 @@ class Lecture01_TextureDemo(Demo):
             GL_RGB, # how on GPU the data will be layed out
             width, height,
             0,      # always 0
-            cpu_format, # how on CPU we stored the `pixels` array
+            GL_RGB, # how on CPU we stored the `pixels` array
             GL_UNSIGNED_BYTE, # which type of all values is in the `pixels` array
             np.ascontiguousarray(cpu_image).flatten(), # array of channels for all pixels
         )
@@ -81,8 +73,7 @@ class Lecture01_TextureDemo(Demo):
         # other options: GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
         glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT)
-
-        # TODO: text mipmaps
+        
         glGenerateMipmap(target)
         return gpu_id
 
