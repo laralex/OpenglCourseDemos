@@ -13,7 +13,7 @@ import pyrr
 class UiDefaults:
     color: int
 
-class Lecture02_CubeDemo(Demo):
+class Lecture02_CubeIndexedDemo(Demo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
@@ -47,84 +47,38 @@ class Lecture02_CubeDemo(Demo):
 
         positions = np.array((
             # X    Y    Z
-            -1.0,-1.0,-1.0, # triangle 1 : begin
-             1.0,-1.0,-1.0,
-            -1.0,-1.0, 1.0, # triangle 1 : end
-            -1.0,-1.0, 1.0, # 2
-             1.0,-1.0,-1.0,
-             1.0,-1.0, 1.0,
-            -1.0,-1.0, 1.0, # 3
-             1.0,-1.0, 1.0,
-            -1.0, 1.0, 1.0,
-            -1.0, 1.0, 1.0, # 4
-             1.0,-1.0, 1.0,
-             1.0, 1.0, 1.0,
-            -1.0, 1.0, 1.0, # 5
-             1.0, 1.0, 1.0,
-            -1.0, 1.0,-1.0,
-            -1.0, 1.0,-1.0, # 6
-             1.0, 1.0, 1.0,
-             1.0, 1.0,-1.0,
-            -1.0, 1.0,-1.0, # 7
-             1.0, 1.0,-1.0,
-            -1.0,-1.0,-1.0,
-            -1.0,-1.0,-1.0, # 8
-             1.0, 1.0,-1.0,
-             1.0,-1.0,-1.0,
-            -1.0,-1.0, 1.0, # 9
-            -1.0, 1.0, 1.0,
-            -1.0,-1.0,-1.0,
-            -1.0,-1.0,-1.0, # 10
-            -1.0, 1.0, 1.0,
-            -1.0, 1.0,-1.0,
-             1.0, 1.0, 1.0, # 11
-             1.0,-1.0, 1.0,
-             1.0, 1.0,-1.0,
-             1.0, 1.0,-1.0, # 12
-             1.0,-1.0, 1.0,
-             1.0,-1.0,-1.0,
+            -1.0,-1.0,-1.0, # 0
+            -1.0,-1.0, 1.0, # 1
+            -1.0, 1.0, 1.0, # 2
+            -1.0, 1.0,-1.0, # 3
+             1.0,-1.0,-1.0, # 4
+             1.0,-1.0, 1.0, # 5
+             1.0, 1.0, 1.0, # 6
+             1.0, 1.0,-1.0, # 7
+
+            -1.0, 1.0, 1.0, # 8 , copy of 2
+            -1.0, 1.0,-1.0, # 9 , copy of 3
+             1.0,-1.0,-1.0, # 10, copy of 4
+             1.0,-1.0, 1.0, # 11, copy of 5
         ), dtype=np.float32, order='C')
 
         float_nbytes = positions.itemsize # 4
 
         texture_coords = np.array((
             # U    V
-             0.0, 0.0, # triangle 1 : begin
-             0.0, 1.0,
-             1.0, 0.0, # triangle 1 : end
-             1.0, 0.0, # 2
-             0.0, 1.0,
-             1.0, 1.0,
-             1.0, 0.0, # 3
-             0.0, 0.0,
-             1.0, 1.0,
-             1.0, 1.0, # 4
-             0.0, 0.0,
-             0.0, 1.0,
+             0.0, 0.0, # 0
+             1.0, 0.0, # 1
+             1.0, 1.0, # 2
+             0.0, 1.0, # 3
+             1.0, 0.0, # 4
              0.0, 0.0, # 5
-             0.0, 1.0,
-             1.0, 0.0,
-             1.0, 0.0, # 6
-             0.0, 1.0,
-             1.0, 1.0,
-             0.0, 1.0, # 7
-             1.0, 1.0,
-             0.0, 0.0,
-             0.0, 0.0, # 8
-             1.0, 1.0,
-             1.0, 0.0,
-             1.0, 0.0, # 9
-             1.0, 1.0,
-             0.0, 0.0,
-             0.0, 0.0, # 10
-             1.0, 1.0,
-             0.0, 1.0,
-             0.0, 1.0, # 11
-             0.0, 0.0,
-             1.0, 1.0,
-             1.0, 1.0, # 12
-             0.0, 0.0,
-             1.0, 0.0,
+             0.0, 1.0, # 6
+             1.0, 1.0, # 7
+
+             0.0, 0.0, # 8 , other coords than 2
+             1.0, 0.0, # 9 , other coords than 3
+             0.0, 1.0, # 10, other coords than 4
+             1.0, 1.0, # 11, other coords than 5
         ), dtype=np.float32, order='C')
 
         # send data to GPU
@@ -157,6 +111,34 @@ class Lecture02_CubeDemo(Demo):
             2*float_nbytes,
             None)
 
+        # make an index buffer
+        self.index_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
+        triangle_indices = np.array((
+          # v1  v2  v3
+            1,  5,  2,
+            2,  5,  6,
+            3,  7,  0,
+            0,  7,  4,
+            1,  2,  0,
+            0,  2,  3,
+            6,  5,  7,
+            7,  5,  4,
+
+            # old 12 positions -> wrong coordinates
+            # 0,  4,  1,
+            # 1,  4,  5,
+            # 2,  6,  3,
+            # 3,  6,  7,
+
+            # duplicated positions, 16 total -> correct
+            0, 10,  1,
+            1, 10, 11,
+            8,  6,  9,
+            9,  6,  7,
+        ), dtype=np.uint32)
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.nbytes, triangle_indices, GL_STATIC_DRAW)
+
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(0,0,0,1)
         # glClear(GL_COLOR_BUFFER_BIT)
@@ -182,7 +164,7 @@ class Lecture02_CubeDemo(Demo):
         glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
 
         glBindVertexArray(self.vao)
-        glDrawArrays(GL_TRIANGLES, 0, 12*3)
+        glDrawElements(GL_TRIANGLES, 12*3, GL_UNSIGNED_INT, None)
 
 
     def unload(self):

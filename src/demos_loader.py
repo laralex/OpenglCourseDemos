@@ -138,6 +138,7 @@ class DemosLoader(Demo):
         from .L01_6_mandelbrot.demo           import Lecture01_MandelbrotDemo
         from .L01_7_julia.demo                import Lecture01_JuliaDemo
         from .L02_1_cube.demo                 import Lecture02_CubeDemo
+        from .L02_2_cube_indexed.demo         import Lecture02_CubeIndexedDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -148,7 +149,8 @@ class DemosLoader(Demo):
             Lecture01_TransformMatrixDemo,
             Lecture01_MandelbrotDemo,
             Lecture01_JuliaDemo,
-            Lecture02_CubeDemo
+            Lecture02_CubeDemo,
+            Lecture02_CubeIndexedDemo,
         ]
 
         self.demos = []
