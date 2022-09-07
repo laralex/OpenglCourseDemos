@@ -31,7 +31,7 @@ class Lecture02_CubeDemo(Demo):
 
     def make_shader(self):
         self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
-        self.texture = GpuTexture(cpu_image=Image.open('../textures/crate_color.jpeg'))
+        self.texture = GpuTexture(cpu_image=Image.open('../../assets/crate_color.jpeg'))
 
         self.shader.use()
 

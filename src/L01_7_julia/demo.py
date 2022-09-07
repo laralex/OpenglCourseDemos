@@ -20,7 +20,7 @@ class Lecture01_JuliaDemo(Demo):
         super().load(window)
 
         self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
-        self.texture_id = self.make_gpu_texture('../textures/pallete_1d.png')
+        self.texture_id = self.make_gpu_texture('../../assets/pallete_1d.png')
 
         self.shader.use()
         glActiveTexture(GL_TEXTURE0)

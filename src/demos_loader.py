@@ -104,8 +104,8 @@ class DemosLoader(Demo):
             self.current_draw_mode_idx += 1
             self.current_draw_mode_idx %= len(self.draw_modes)
             current_draw_mode = self.draw_modes[self.current_draw_mode_idx]
-            glLineWidth(3)
-            glPointSize(10)
+            glLineWidth(2)
+            glPointSize(2)
             glPolygonMode(GL_FRONT_AND_BACK, current_draw_mode)
 
         if changed_demo:
@@ -139,6 +139,7 @@ class DemosLoader(Demo):
         from .L01_7_julia.demo                import Lecture01_JuliaDemo
         from .L02_1_cube.demo                 import Lecture02_CubeDemo
         from .L02_2_cube_indexed.demo         import Lecture02_CubeIndexedDemo
+        from .L02_3_mesh.demo                 import Lecture02_MeshDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -151,6 +152,7 @@ class DemosLoader(Demo):
             Lecture01_JuliaDemo,
             Lecture02_CubeDemo,
             Lecture02_CubeIndexedDemo,
+            Lecture02_MeshDemo,
         ]
 
         self.demos = []

@@ -29,7 +29,7 @@ class Lecture01_TransformMatrixDemo(Demo):
 
         # The fragrament shader uses rasterized texture coordinates `v_texcoord`
         # connect texture and the shader, so that we can render pixels with texture values
-        self.texture = GpuTexture(cpu_image=Image.open('../textures/crate_color.jpeg'))
+        self.texture = GpuTexture(cpu_image=Image.open('../../assets/crate_color.jpeg'))
 
         self.shader.use()
         glActiveTexture(GL_TEXTURE0)
