@@ -1,41 +1,13 @@
 import logging
-log = logging.getLogger(__file__)
+logger = logging.getLogger(__file__)
 
 import numpy as np
 import re
-import enum
 
-
-COMMENT_REGEXP        = re.compile(
-    r'#[^\n]*\n', flags=re.MULTILINE,)
-FACE_REGEXP           = re.compile(
-    r'^f\s+(\d+)(/(\d+)?(/(\d+))?)?\s+(\d+)(/(\d+)?(/(\d+))?)?\s+(\d+)(/(\d+)?(/(\d+))?)?(\s+(\d+)(/(\d+)?(/(\d+))?)?)?$')
-POSITION_REGEXP       = re.compile(
-    r'^v\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)$')
-TEXTURE_COORDS_REGEXP = re.compile(
-    r'^vt\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)(?:\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?))?$')
-NORMAL_REGEXP         = re.compile(
-    r'^vn\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)\s+(-?\d+(?:\.\d+)?(?:[Ee]-?\d+)?)$')
-
-class AttributesLayout(enum.Enum):
-    POS3 = 1
-    TEX2 = 2
-    NORM3 = 3
-    POS3_TEX2 = 4
-    POS3_NORM3 = 5
-    TEX2_NORM3 = 6
-    POS3_TEX2_NORM3 = 7
-
-    def as_iterable(self):
-        return {
-            self.POS3           : tuple(self.POS3),
-            self.TEX2           : tuple(self.POS3),
-            self.NORM3          : tuple(self.NORM3),
-            self.POS3_TEX2      : tuple(self.POS3, self.TEX2),
-            self.POS3_NORM3     : tuple(self.POS3, self.NORM3),
-            self.TEX2_NORM3     : tuple(self.TEX2, self.NORM3),
-            self.POS3_TEX2_NORM3: tuple(self.POS3, self.TEX2, self.NORM3),
-        }[self.value]
+COMMENT_REGEXP = re.compile(r'#[^\n]*\n')
+FLOAT_REGEXP  = re.compile(r'(?:\s+(-?\d*\.?\d*))')
+FACE_REGEXP = re.compile(
+    r'^f\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?(?:\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?)?$')
 
 class ParsedWavefront:
     """
@@ -52,9 +24,9 @@ class ParsedWavefront:
 
     Example Usage:
 
-    > from obj_loader import ParsedWavefront, AttributesLayout
-    > scene = ParsedWavefront('path/to/scene.obj')
-    > attributes   = scene.attributes_as_numpy(AttributesLayout.POS3_TEX2)
+    > import obj_loader
+    > scene = obj_loader.ParsedWavefront('path/to/scene.obj')
+    > attributes   = scene.attributes_as_numpy('P3_T2')
     > face_indices = scene.faces_as_numpy()
 
     """
@@ -67,66 +39,64 @@ class ParsedWavefront:
     def parse(self):
         with open(self.filepath, 'r') as f:
             p, t, n = ParsedWavefront.parse_string(f.read())
-            self.positions, self.positions_indices = p
-            self.texture_coordinates, self.texture_coordinates_indices = t
-            self.normals, self.normals_indices = n
+        self.positions, self.positions_indices = p
+        self.texture_coordinates, self.texture_coordinates_indices = t
+        self.normals, self.normals_indices = n
 
 
     @staticmethod
     def parse_string(wavefront_str: str):
-        def none2zero(x):
-            return 0.0 if x is None else float(x)
-
         positions          , positions_indices           = [], []
         texture_coordinates, texture_coordinates_indices = [], []
         normals            , normals_indices             = [], []
 
         wavefront_str = COMMENT_REGEXP.sub('\n', wavefront_str)
+
         for line_idx, line in enumerate(wavefront_str.splitlines()):
             line = line.strip()
-
-            if not line:
+            if len(line) == 0:
                 continue
 
-            parsed = False
-
-            for regexp, destination in [
-                (POSITION_REGEXP        , positions),
-                (TEXTURE_COORDS_REGEXP  , texture_coordinates),
-                (NORMAL_REGEXP          , normals)]:
-
-                match = regexp.match(line)
-                if match is not None:
-                    destination.append(tuple(map(none2zero, match.groups())))
-                    parsed = True
-                    break
-
-            if parsed:
-                continue
-
-            match = FACE_REGEXP.match(line)
-            if match is not None:
-                def add_vertex_indices(regexp_groups):
+            if line.startswith('vt'): # vertex texture coordinates
+                attribute_floats = tuple(map(float, FLOAT_REGEXP.findall(line)))
+                texture_coordinates.append(attribute_floats)
+            elif line.startswith('vn'): # vertex normals
+                attribute_floats = tuple(map(float, FLOAT_REGEXP.findall(line)))
+                normals.append(attribute_floats)
+            elif line.startswith('v'): # vertex positions
+                attribute_floats = tuple(map(float, FLOAT_REGEXP.findall(line)))
+                positions.append(attribute_floats)
+            elif line.startswith('f'): # face
+                # helping function to parse 1 vertex indices which may be in fomrs:
+                # 'a/b/c', 'a//c', 'a/b', 'a'
+                def add_vertex_indices(*regexp_groups):
                     v, t, n = match.group(*regexp_groups)
-                    positions_indices.append(int(v))
-                    if t:
-                        texture_coordinates_indices.append(int(t))
-                    if n:
-                        normals_indices.append(int(t))
+                    positions_indices.append(int(v)-1)
+                    if t: texture_coordinates_indices.append(int(t)-1)
+                    if n: normals_indices.append(int(n)-1)
 
-                add_vertex_indices(1 , 3 , 5 )
-                add_vertex_indices(6 , 8 , 10)
-                add_vertex_indices(11, 13, 15)
-                if match.group(16) is not None:
+
+                match = FACE_REGEXP.match(line)
+                if match is None:
+                    logger.warning(f'Bad face on line {line_idx+1}:"{line}"')
+                    continue
+
+                add_vertex_indices(1 , 2 , 3 )
+                add_vertex_indices(4 , 5 , 6 )
+                add_vertex_indices(7 , 8 , 9 )
+                if match.group(10) is not None:
                     # it's a quad, split into two triangles
-                    add_vertex_indices(1 , 3 , 5 )
-                    add_vertex_indices(11, 13, 15)
-                    add_vertex_indices(17, 19, 21)
+                    add_vertex_indices(1 , 2 , 3 )
+                    add_vertex_indices(7 , 8 , 9 )
+                    add_vertex_indices(10, 11, 12)
+            else:
+                logger.warning(f'Unsupported line {line_idx+1}:"{line}"')
+            logger.debug(f'Processed line {line_idx+1}:"{line}"')
 
-            log.debug(f'Unsupported line {line_idx+1}:"{line}"')
-
-        if any(len(arr) not in [0, len(positions_indices)]
-               for arr in [texture_coordinates_indices, normals_indices]):
+        # check that either for all faces a certain attribute is defined,
+        # or for all faces the attribute is undifined (missing)
+        if len(texture_coordinates_indices) not in [0, len(positions_indices)] or \
+           len(normals_indices)             not in [0, len(positions_indices)]:
             raise Exception(f'Inconsistent faces definition"')
 
         return (positions, positions_indices), \
@@ -134,27 +104,70 @@ class ParsedWavefront:
                (normals, normals_indices)
 
 
-    def attributes_as_numpy(self, attributes_layout: AttributesLayout, dtype=np.float32) -> np.array:
-        assert isinstance(attributes_layout, AttributesLayout),\
-            "Use only objects of type VertexAttribute to specify attributes_order"
 
-        attributes = {
-            AttributesLayout.POS3  : self.positions[self.positions_indices],
-            AttributesLayout.TEX2  : self.texture_coordinates[self.texture_coordinates_indices],
-            AttributesLayout.NORM3 : self.normals[self.normals_indices],
-        }
+    def attributes_as_numpy(self, attributes_layout: str, dtype=np.float32) -> np.array:
+        parts = parse_interleaved_layout(attributes_layout)
+        attributes = {}
 
-        interleaved_data = np.hstack(
-            attributes[k]
-            for k in attributes_layout.as_iterable())
-        return np.ascontiguousarray(interleaved_data, dtype=dtype)
+        if self.positions_indices:
+            attributes['P'] = np.array(self.positions)[self.positions_indices]
+        if self.texture_coordinates_indices:
+            attributes['T'] = np.array(self.texture_coordinates)[self.texture_coordinates_indices]
+        if self.normals_indices:
+            attributes['N'] = np.array(self.normals)[self.normals_indices]
 
-    def faces_as_numpy(self, dtype=np.uint32):
-        return np.ascontiguousarray(self.faces, dtype=dtype)
+        arrays_to_stack = []
+        for key, used_coordinates in parts:
+            assert key in attributes, f"OBJ file doesn't include data for part '{key}'"
+            extension_width = max(0,used_coordinates-attributes[key].shape[1])
+            extended = np.pad(attributes[key], ((0,0),(0,extension_width)))
+            arrays_to_stack.append(extended[:, :used_coordinates])
+
+        interleaved_data = np.ascontiguousarray(
+            np.hstack(arrays_to_stack), dtype=dtype)
+
+        return interleaved_data
+
+def parse_interleaved_layout(layout_str):
+    """ Example string: 'P3_T2_N3'
+    meaning 3 position values, 2 texture coordinates, 3 normal values"""
+    parts = layout_str.upper().split('_')
+    parsed_parts = []
+    added_parts = set()
+    for part in parts:
+        assert part != '', "Must separate the parts with a single underscore '_'"
+        assert len(part) == 2, "Each part should be of two characters: <letter><digit>"
+        assert part[0] in ['P', 'T', 'N'], "Can only use part letter: 'P' (vertex positions), 'T' (texture coordinates), 'N' (vertex normals)"
+        assert part[1].isdigit(), "Each part should be of two characters: <letter><digit>"
+        assert part[0] not in added_parts, "Can't specify the same part twice"
+        parsed_parts.append((part[0], int(part[1])))
+        added_parts.add(part[0])
+    return parsed_parts
 
 if __name__ == "__main__":
-    scene = ParsedWavefront('../../assets/spot_cow/spot_control_mesh.obj')
-    attributes   = scene.attributes_as_numpy(AttributesLayout.POS3_TEX2)
-    face_indices = scene.faces_as_numpy()
+    logging.basicConfig(level=logging.WARNING)
+
+    # testing validity
+    assert FACE_REGEXP.match('f 9//0 2/1/3 4/5').groups() == \
+        ('9', None, '0', '2', '1', '3', '4', '5', None, None, None, None)
+    assert FACE_REGEXP.match('f 0/1 2/3 4/5').groups() == \
+        ('0', '1', None, '2', '3', None, '4', '5', None, None, None, None)
+    assert FACE_REGEXP.match('f 0 2/1/3 4/5').groups() == \
+        ('0', None, None, '2', '1', '3', '4', '5', None, None, None, None)
+    assert list(map(float, FLOAT_REGEXP.findall('v 1 2.0 2. 0.3 -.03'))) == [1.0, 2.0, 2.0, 0.3, -0.03]
+
+    print('Testing spot_control_mesh.obj')
+    scene = ParsedWavefront('assets/spot_cow/spot_control_mesh.obj')
+    attributes   = scene.attributes_as_numpy('T1_P3')
+    # face_indices = scene.faces_as_numpy()
+    # print(face_indices)
+    # print(face_indices.shape)
+
+    print('Testing head.obj')
+    scene = ParsedWavefront('assets/human_head/head.obj')
+    attributes   = scene.attributes_as_numpy('P4_T1')
     print(attributes)
-    print(face_indices)
+    print(attributes.shape)
+    # face_indices = scene.faces_as_numpy()
+    # print(face_indices)
+    # print(face_indices.shape)
