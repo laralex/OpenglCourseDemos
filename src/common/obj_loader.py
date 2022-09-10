@@ -33,20 +33,22 @@ class ParsedWavefront:
 
     """
 
-    def __init__(self, wavefront_filepath: str, parse=True):
+    def __init__(self, wavefront_filepath: str, parse=True, verbose=True):
         """wavefront_filepath: should be an existing file path to a Wavefront file
-           parse: if True the long parsing operation will be run immediately"""
+           parse: if True the long parsing operation will be run immediately
+           verbose: if False, nothing will be logged in console"""
         self.filepath = wavefront_filepath
+        self.verbose = verbose
         if parse:
             self.parse()
 
     def parse(self):
         """Run the long executing parsing operation"""
         with open(self.filepath, 'r') as f:
-            self.parsed = ParsedWavefront.parse_string(f.read())
+            self.parsed = ParsedWavefront.parse_string(f.read(), self.verbose)
 
     @staticmethod
-    def parse_string(wavefront_str: str) -> Dict[str, Any]:
+    def parse_string(wavefront_str: str, verbose:bool = True) -> Dict[str, Any]:
         """Extracts data from a multiline string that follows Wavefront (OBJ) file format"""
 
         # data for glDrawArrays
@@ -103,7 +105,7 @@ class ParsedWavefront:
 
                 match = FACE_REGEXP.match(line)
                 if match is None:
-                    logger.warning(f'Bad face on line {line_idx+1}:"{line}"')
+                    if verbose: logger.warning(f'Bad face on line {line_idx+1}:"{line}"')
                     continue
 
                 add_vertex_indices(1 , 2 , 3 )
@@ -115,8 +117,8 @@ class ParsedWavefront:
                     add_vertex_indices(7 , 8 , 9 )
                     add_vertex_indices(10, 11, 12)
             else:
-                logger.warning(f'Unsupported line {line_idx+1}:"{line}"')
-            logger.debug(f'Processed line {line_idx+1}:"{line}"')
+                if verbose: logger.warning(f'Unsupported line {line_idx+1}:"{line}"')
+            if verbose: logger.debug(f'Processed line {line_idx+1}:"{line}"')
 
         # check that either for all faces a certain attribute is defined,
         # or for all faces the attribute is undifined (missing)
@@ -193,18 +195,19 @@ class ParsedWavefront:
 
         attributes = {}
         if positions_indices:
-            attributes['P'] = np.array(self.parsed['positions_parsed'])[positions_indices]
+            attributes['P'] = np.array(self.parsed['positions_parsed'])[np.array(positions_indices)]
         if texcoords_indices:
-            attributes['T'] = np.array(self.parsed['texcoords_parsed'])[texcoords_indices]
+            attributes['T'] = np.array(self.parsed['texcoords_parsed'])[np.array(texcoords_indices)]
         if normals_indices:
-            attributes['N'] = np.array(self.parsed['normals_parsed'])[normals_indices]
+            attributes['N'] = np.array(self.parsed['normals_parsed'])[np.array(normals_indices)]
 
         arrays_to_stack = []
         for key, used_coordinates in parts:
             assert key in attributes, f"OBJ file doesn't include data for part '{key}'"
             extension_width = max(0,used_coordinates-attributes[key].shape[1])
-            extended = np.pad(attributes[key], ((0,0),(0,extension_width)))
-            arrays_to_stack.append(extended[:, :used_coordinates])
+            if extension_width:
+                attributes[key] = np.pad(attributes[key], ((0,0),(0,extension_width)))
+            arrays_to_stack.append(attributes[key][:, :used_coordinates])
 
         interleaved_data = np.ascontiguousarray(
             np.hstack(arrays_to_stack), dtype=dtype)
