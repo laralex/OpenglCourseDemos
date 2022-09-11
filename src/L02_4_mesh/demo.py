@@ -1,18 +1,17 @@
-from dataclasses import dataclass
-import math
-from tabnanny import verbose
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..common.obj_loader import ParsedWavefront
 from ..demos_loader import Demo
+from ..common.defines import *
 from OpenGL.GL import *
+from typing import Optional
 from PIL import Image
 import numpy as np
 import glfw
 import pyrr
 
 class GpuMesh:
-    def __init__(self, obj_filepath: str, texture_filepath: str, use_index_buffer=True):
+    def __init__(self, obj_filepath: str, texture_filepath: Optional[str] = None, use_index_buffer=True):
         self.position_n_coords = 3
         self.texcoord_n_coords = 2
         self.position_location, self.texcoord_location = None, None
@@ -30,9 +29,9 @@ class GpuMesh:
         self.texcoord_location = texcoord_location
         return self
 
-    def build(self):
+    def build(self, verbose=True):
         assert self.position_location is not None and self.texcoord_location is not None
-        self.load_vertex_data(self.obj_filepath)
+        self.load_vertex_data(self.obj_filepath, verbose=verbose)
         self.load_texture(self.texture_filepath)
         self.is_built = True
         return self
@@ -48,37 +47,38 @@ class GpuMesh:
     def use(self):
         assert self.is_built
         glBindVertexArray(self.vao)
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
+        if self.texture is not None:
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
         return self.vao
 
-    def load_vertex_data(self, obj_filepath: str):
+    def load_vertex_data(self, obj_filepath: str, verbose=True):
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
 
-        scene = ParsedWavefront(obj_filepath, verbose=True)
+        scene = ParsedWavefront(obj_filepath, verbose=verbose)
 
         attributes_layout = f'P{self.position_n_coords}_T{self.texcoord_n_coords}'
         if self.use_index_buffer:
-            attibutes, index_array = scene.as_numpy_indexed(attributes_layout)
+            attributes, index_array = scene.as_numpy_indexed(attributes_layout)
             self.n_elements = len(index_array)
         else:
-            attibutes = scene.as_numpy(attributes_layout)
-            self.n_elements = attibutes.shape[0]
+            attributes = scene.as_numpy(attributes_layout)
+            self.n_elements = attributes.shape[0]
 
         # send data to GPU
         self.gpu_attributes = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.gpu_attributes)
-        glBufferData(GL_ARRAY_BUFFER, attibutes.nbytes, attibutes, GL_STATIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, attributes.nbytes, attributes, GL_STATIC_DRAW)
         if self.use_index_buffer:
             self.gpu_index_array = glGenBuffers(1)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.gpu_index_array)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array.nbytes, index_array, GL_STATIC_DRAW)
 
         # connect a shader variable and vertex data
-        float_nbytes = attibutes.itemsize
+        float_nbytes = attributes.itemsize
         attributes_stride = (self.position_n_coords + self.texcoord_n_coords) * float_nbytes
-
+        print(attributes, attributes.shape)
         glEnableVertexAttribArray(self.position_location)
         glVertexAttribPointer(self.position_location,
             self.position_n_coords,
@@ -102,8 +102,11 @@ class GpuMesh:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
     def load_texture(self, texture_filepath):
-        cpu_image = Image.open(texture_filepath).transpose(Image.FLIP_TOP_BOTTOM)
-        self.texture = GpuTexture(cpu_image)
+        if texture_filepath is not None:
+            cpu_image = Image.open(texture_filepath).transpose(Image.FLIP_TOP_BOTTOM)
+            self.texture = GpuTexture(cpu_image)
+        else:
+            self.texture = None
 
     def __del__(self):
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
@@ -133,7 +136,7 @@ class Lecture02_MeshDemo(Demo):
                 use_index_buffer=True)
             head_mesh.with_attributes_size(position_n_coords, texcoord_n_coords)
             head_mesh.with_attributes_shader_location(position_shader_location, texcoord_shader_location)
-            self.meshes.append(head_mesh.build())
+            self.meshes.append(head_mesh.build(verbose=False))
             print('Loaded head mesh and texture, n_elements:', self.meshes[-1].n_draw_elements)
 
             cow_mesh = GpuMesh(
@@ -183,6 +186,7 @@ class Lecture02_MeshDemo(Demo):
             translation = pyrr.Matrix44.from_translation(translation, dtype=np.float32)
 
             transform = translation @ rotation @ scale
+
             uniform_transform = glGetUniformLocation(shader_id, "u_transform")
             glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
 

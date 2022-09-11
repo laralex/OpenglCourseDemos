@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-import math
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..demos_loader import Demo
+from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image
 import numpy as np
-import glfw
 import pyrr
 
 @dataclass

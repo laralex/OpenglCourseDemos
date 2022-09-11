@@ -1,21 +1,13 @@
-from dataclasses import dataclass
-import math
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..demos_loader import Demo
+from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image
 import numpy as np
-import glfw
-import pyrr
-
-@dataclass
-class UiDefaults:
-    color: int
 
 class Lecture01_TransformDemo(Demo):
     def __init__(self):
-        #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)
 
     def load(self, window):
@@ -112,13 +104,13 @@ class Lecture01_TransformDemo(Demo):
 
         # rotation = np.eye(2, dtype=np.float32)
         rotation = np.array([
-            [time_cos ,  time_sin],
-            [-time_sin,  time_cos],
+            [time_cos , -time_sin],
+            [time_sin ,  time_cos],
         ], dtype=np.float32)
 
         transform = rotation @ scale
         uniform_transform = glGetUniformLocation(shader_id, "u_transform")
-        glUniformMatrix2fv(uniform_transform, 1, GL_FALSE, transform)
+        glUniformMatrix2fv(uniform_transform, 1, GL_TRUE, transform)
 
         uniform_translation = glGetUniformLocation(shader_id, "u_translation")
         translation_x, translation_y = 0.0, time_sin * 0.5

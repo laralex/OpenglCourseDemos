@@ -1,7 +1,6 @@
-from ast import Pass
 import time
-from .common.window import *
 import sys, os
+from .common.window import *
 from .common.defines import *
 from OpenGL.GL import *
 import inspect

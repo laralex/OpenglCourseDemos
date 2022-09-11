@@ -1,4 +1,5 @@
 from ..demos_loader import Demo
+from ..common.defines import *
 from OpenGL.GL import *
 import math
 

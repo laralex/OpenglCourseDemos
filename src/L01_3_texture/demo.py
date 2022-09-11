@@ -1,15 +1,10 @@
 from dataclasses import dataclass
-import math
-from pickle import FALSE
-from typing import overload
-from ..common import parse_json, window
-from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..demos_loader import Demo
+from ..common.defines import *
 from OpenGL.GL import *
 import PIL
 import numpy as np
-import glfw
 
 @dataclass
 class UiDefaults:
