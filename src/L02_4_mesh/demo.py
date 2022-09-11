@@ -146,6 +146,7 @@ class Lecture02_MeshDemo(Demo):
             print('Loaded cow mesh and texture, n_elements:', self.meshes[-1].n_draw_elements)
 
         # enable Z-buffer
+        self.z_buffer_enabled = True
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
 
@@ -190,6 +191,16 @@ class Lecture02_MeshDemo(Demo):
                 glDrawElements(GL_TRIANGLES, mesh.n_draw_elements, GL_UNSIGNED_INT, None)
             else:
                 glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
+
+    def keyboard_callback(self, window, key, scancode, action, mods):
+        super().keyboard_callback(window, key, scancode, action, mods)
+        if (key, action) == (glfw.KEY_Q, glfw.PRESS):
+            # Toggle z-buffer
+            self.z_buffer_enabled = not self.z_buffer_enabled
+            if self.z_buffer_enabled:
+                glEnable(GL_DEPTH_TEST)
+            else:
+                glDisable(GL_DEPTH_TEST)
 
     def unload(self):
         if not self.is_loaded:

@@ -100,7 +100,7 @@ class DemosLoader(Demo):
             enable_fullscreen=not is_fullscreen,
                 window_position=self.windowed_position,
                 window_size=self.windowed_size)
-        if (key, action) == (glfw.KEY_T, glfw.PRESS):
+        if (key, action) == (glfw.KEY_P, glfw.PRESS):
             self.current_draw_mode_idx += 1
             self.current_draw_mode_idx %= len(self.draw_modes)
             current_draw_mode = self.draw_modes[self.current_draw_mode_idx]
