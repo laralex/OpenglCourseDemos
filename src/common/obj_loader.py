@@ -6,7 +6,7 @@ import re
 from typing import Tuple, List, Dict, Any
 
 COMMENT_REGEXP = re.compile(r'#[^\n]*\n')
-FLOAT_REGEXP  = re.compile(r'(?:\s+(-?\d*\.?\d*))')
+FLOAT_REGEXP  = re.compile(r'(?:\s+(-?\d*\.?\d*(?:[Ee][+-]?\d+)?))')
 FACE_REGEXP = re.compile(
     r'^f\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?(?:\s+(\d+)(?:/(\d+)?)?(?:/(\d+))?)?$')
 
@@ -241,22 +241,33 @@ if __name__ == "__main__":
         ('0', '1', None, '2', '3', None, '4', '5', None, None, None, None)
     assert FACE_REGEXP.match('f 0 2/1/3 4/5').groups() == \
         ('0', None, None, '2', '1', '3', '4', '5', None, None, None, None)
-    assert list(map(float, FLOAT_REGEXP.findall('v 1 2.0 2. 0.3 -.03'))) == [1.0, 2.0, 2.0, 0.3, -0.03]
+    print(list(map(float, FLOAT_REGEXP.findall('v 1 2.0 2. 0.3 -.03 -4E+3 .01e-1'))))
+    assert list(map(float, FLOAT_REGEXP.findall('v 1 2.0 2. 0.3 -.03 -4E+3 .01e-1'))) == \
+        [1.0, 2.0, 2.0, 0.3, -0.03, -4000.0, 0.001]
 
     print('Testing spot_control_mesh.obj')
-    scene = ParsedWavefront('assets/spot_cow/spot_control_mesh.obj')
+    scene = ParsedWavefront('assets/spot_cow/spot_triangulated.obj')
     attributes               = scene.as_numpy('T1_P3')
+
     print('Attributes', attributes)
-    print(attributes.shape)
+    print(attributes.size)
     attributes, face_indices = scene.as_numpy_indexed('T1_P3')
     print('Indexed attributes', attributes)
-    print(attributes.shape, 'indices:', face_indices.shape)
+    print(attributes.size, 'indices:', face_indices.size)
 
-    print('Testing head.obj')
-    scene = ParsedWavefront('assets/human_head/head.obj')
-    attributes   = scene.as_numpy('P4_T1')
-    print(attributes)
-    print(attributes.shape)
-    attributes, face_indices = scene.as_numpy_indexed('P4_T1')
-    print('Indexed attributes', attributes)
-    print(attributes.shape, 'indices:', face_indices.shape)
+    d = np.abs(attributes).sum(axis=-1)
+    print(d.min(), d.mean(), d.max())
+    hi = d > 4
+    #print('@'*10, hi, attributes[hi])
+    for i in range(hi.size):
+        if hi[i]:
+            print('Found', i, attributes[i])
+
+    # print('Testing head.obj')
+    # scene = ParsedWavefront('assets/human_head/head.obj')
+    # attributes   = scene.as_numpy('P4_T1')
+    # print(attributes)
+    # print(attributes.shape)
+    # attributes, face_indices = scene.as_numpy_indexed('P4_T1')
+    # print('Indexed attributes', attributes)
+    # print(attributes.shape, 'indices:', face_indices.shape)
