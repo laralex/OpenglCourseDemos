@@ -103,25 +103,24 @@ class Lecture01_TransformMatrixDemo(Demo):
         time_sin = np.sin(global_time_sec)
         time_cos = np.cos(global_time_sec)
 
-        scale_x = scale_y = (time_cos + 1.1) * 0.5
-        # scale = np.eye(3, dtype=np.float32)
+        scale_x = scale_y = 0.3
         scale = np.array([
             [scale_x ,     0.0, 0.0],
             [0.0     , scale_y, 0.0],
             [0.0     ,     0.0, 1.0],
         ], dtype=np.float32)
 
-        # rotation = np.eye(3, dtype=np.float32)
         translation_x, translation_y = 0.0, time_sin * 0.5
         rotation_translation = np.array([
-            [time_sin     ,      time_cos, 0.0],
-            [time_cos     ,     -time_sin, 0.0],
-            [translation_x, translation_y, 1.0],
+            [time_cos     ,    -time_sin, translation_x],
+            [time_sin     ,     time_cos, translation_y],
+            [0.0          , 0.0         , 1.0],
         ], dtype=np.float32)
 
         transform = rotation_translation @ scale
+
         uniform_transform = glGetUniformLocation(shader_id, "u_transform")
-        glUniformMatrix3fv(uniform_transform, 1, GL_FALSE, transform)
+        glUniformMatrix3fv(uniform_transform, 1, GL_TRUE, transform)
 
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)

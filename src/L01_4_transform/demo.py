@@ -103,7 +103,7 @@ class Lecture01_TransformDemo(Demo):
         time_sin = np.sin(global_time_sec)
         time_cos = np.cos(global_time_sec)
 
-        scale_x = scale_y = (time_cos + 1.1) * 0.5
+        scale_x = scale_y = 0.3
         # scale = np.eye(2, dtype=np.float32)
         scale = np.array([
             [scale_x ,     0.0],
@@ -112,8 +112,8 @@ class Lecture01_TransformDemo(Demo):
 
         # rotation = np.eye(2, dtype=np.float32)
         rotation = np.array([
-            [time_sin,  time_cos],
-            [time_cos, -time_sin],
+            [time_cos ,  time_sin],
+            [-time_sin,  time_cos],
         ], dtype=np.float32)
 
         transform = rotation @ scale

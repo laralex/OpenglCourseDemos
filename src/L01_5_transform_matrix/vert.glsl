@@ -16,5 +16,5 @@ void main()
 
    // === CHANGE #2
    vec3 screen_position = u_transform * vec3(a_position, 1.0);
-   gl_Position = vec4(screen_position.x, screen_position.y * u_aspect_ratio , screen_position.z, 1.0);
+   gl_Position = vec4(screen_position.x, screen_position.y * u_aspect_ratio, 0.0, 1.0);
 }

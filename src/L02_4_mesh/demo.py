@@ -145,9 +145,6 @@ class Lecture02_MeshDemo(Demo):
             self.meshes.append(cow_mesh.build())
             print('Loaded cow mesh and texture, n_elements:', self.meshes[-1].n_draw_elements)
 
-            self.current_mesh = 0
-
-
         # enable Z-buffer
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
@@ -168,29 +165,31 @@ class Lecture02_MeshDemo(Demo):
         uniform_aspect = glGetUniformLocation(shader_id, "u_aspect_ratio")
         glUniform1f(uniform_aspect, width / height)
 
-        # make rotation, scale, translation
-        scale_all = 2.0 if self.current_mesh == 0 else 0.5
-        scale = pyrr.Matrix44.from_scale((scale_all, scale_all, scale_all), dtype=np.float32)
-        rotation = pyrr.Matrix44.from_eulers((0.0, 0.0, global_time_sec/2), dtype=np.float32)
-        translation = pyrr.Matrix44.from_translation((0.0, 0.1, 0.0), dtype=np.float32)
-
-        transform = translation @ rotation @ scale
-        uniform_transform = glGetUniformLocation(shader_id, "u_transform")
-        glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
-
-        mesh = self.meshes[self.current_mesh]
-        mesh.use()
         self.shader.use()
-        if mesh.has_index_buffer:
-            glDrawElements(GL_TRIANGLES, mesh.n_draw_elements, GL_UNSIGNED_INT, None)
-        else:
-            glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
+        for i, mesh in enumerate(self.meshes):
+            # make rotation, scale, translation
+            if i == 0:
+                scale = 2.0
+                translation = (0.0, 0.1, 0.3)
+            else:
+                scale = 0.5
+                translation = (0.0, 0.0, -1.0)
 
-    def keyboard_callback(self, window, key, scancode, action, mods):
-        if (key, action) == (glfw.KEY_R, glfw.PRESS):
-            self.current_mesh = (self.current_mesh + 1) % len(self.meshes)
-            print('Current mesh', 'head' if self.current_mesh == 0 else 'cow')
-        super().keyboard_callback(window, key, scancode, action, mods)
+            scale = pyrr.Matrix44.from_scale((scale, scale, scale), dtype=np.float32)
+
+            rotation = pyrr.Matrix44.from_eulers((0.0, 0.0, global_time_sec/2), dtype=np.float32)
+
+            translation = pyrr.Matrix44.from_translation(translation, dtype=np.float32)
+
+            transform = translation @ rotation @ scale
+            uniform_transform = glGetUniformLocation(shader_id, "u_transform")
+            glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
+
+            mesh.use()
+            if mesh.has_index_buffer:
+                glDrawElements(GL_TRIANGLES, mesh.n_draw_elements, GL_UNSIGNED_INT, None)
+            else:
+                glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
 
     def unload(self):
         if not self.is_loaded:
