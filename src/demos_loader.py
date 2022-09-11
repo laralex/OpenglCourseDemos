@@ -139,7 +139,8 @@ class DemosLoader(Demo):
         from .L01_7_julia.demo                import Lecture01_JuliaDemo
         from .L02_1_cube.demo                 import Lecture02_CubeDemo
         from .L02_2_cube_indexed.demo         import Lecture02_CubeIndexedDemo
-        from .L02_3_mesh.demo                 import Lecture02_MeshDemo
+        from .L02_3_cube_interleaved.demo     import Lecture02_CubeInterleavedDemo
+        from .L02_4_mesh.demo                 import Lecture02_MeshDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -152,6 +153,7 @@ class DemosLoader(Demo):
             Lecture01_JuliaDemo,
             Lecture02_CubeDemo,
             Lecture02_CubeIndexedDemo,
+            Lecture02_CubeInterleavedDemo,
             Lecture02_MeshDemo,
         ]
 
