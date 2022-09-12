@@ -1,3 +1,4 @@
+from ..common.texture_drawer import TextureDrawer
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
 from ..common.obj_loader import ParsedWavefront
@@ -11,12 +12,13 @@ import glfw
 import pyrr
 
 class GpuMesh:
-    def __init__(self, obj_filepath: str, texture_filepath: Optional[str] = None, use_index_buffer=True):
+    def __init__(self, obj_filepath: str, texture_filepath: str = None, texture_unit: int = None, use_index_buffer=True):
         self.position_n_coords = 3
         self.texcoord_n_coords = 2
         self.position_location, self.texcoord_location = None, None
         self.obj_filepath = obj_filepath
         self.texture_filepath = texture_filepath
+        self.texture_unit = texture_unit
         self.use_index_buffer = use_index_buffer
 
     def with_attributes_size(self, position_n_coords: int, texcoord_n_coords: int):
@@ -48,7 +50,7 @@ class GpuMesh:
         assert self.is_built
         glBindVertexArray(self.vao)
         if self.texture is not None:
-            glActiveTexture(GL_TEXTURE0)
+            glActiveTexture(GL_TEXTURE0 + self.texture_unit)
             glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
         return self.vao
 
@@ -78,7 +80,7 @@ class GpuMesh:
         # connect a shader variable and vertex data
         float_nbytes = attributes.itemsize
         attributes_stride = (self.position_n_coords + self.texcoord_n_coords) * float_nbytes
-        print(attributes, attributes.shape)
+
         glEnableVertexAttribArray(self.position_location)
         glVertexAttribPointer(self.position_location,
             self.position_n_coords,
@@ -124,7 +126,8 @@ class Lecture02_MeshDemo(Demo):
     def load(self, window):
         super().load(window)
 
-        self.make_shader()
+        self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
+
         shader_id = self.shader.use()
         position_shader_location = glGetAttribLocation(shader_id, "a_position")
         texcoord_shader_location = glGetAttribLocation(shader_id, "a_texture_coords")
@@ -133,6 +136,7 @@ class Lecture02_MeshDemo(Demo):
             head_mesh = GpuMesh(
                 obj_filepath='../../assets/human_head/head.obj',
                 texture_filepath='../../assets/human_head/lambertian.jpg',
+                texture_unit=0, # bound once to GL_TEXTURE0, used later for all the frames
                 use_index_buffer=True)
             head_mesh.with_attributes_size(position_n_coords, texcoord_n_coords)
             head_mesh.with_attributes_shader_location(position_shader_location, texcoord_shader_location)
@@ -142,24 +146,31 @@ class Lecture02_MeshDemo(Demo):
             cow_mesh = GpuMesh(
                 obj_filepath='../../assets/spot_cow/spot_triangulated.obj',
                 texture_filepath='../../assets/spot_cow/spot_texture.png',
+                texture_unit=1, # bound once to GL_TEXTURE0, used later for all the frames
                 use_index_buffer=True)
             cow_mesh.with_attributes_size(position_n_coords, texcoord_n_coords)
             cow_mesh.with_attributes_shader_location(position_shader_location, texcoord_shader_location)
             self.meshes.append(cow_mesh.build())
             print('Loaded cow mesh and texture, n_elements:', self.meshes[-1].n_draw_elements)
 
+        # Draw textures used in this demo, totally unnecessary and for visualization purposes
+        self.draw_textures = False
+
+        self.head_texture_drawer = TextureDrawer((-1,-0.25), (-0.5,0.25))
+        head_texture_id = self.meshes[0].texture.gl_id
+        head_texture_unit = self.meshes[0].texture_unit # 0
+        self.head_texture_drawer.attach_texture(head_texture_id, head_texture_unit)
+
+        cow_texture_id = self.meshes[1].texture.gl_id
+        cow_texture_unit = self.meshes[1].texture_unit # 0
+        self.cow_texture_drawer = TextureDrawer((0.5,-0.25), (1,0.25))
+        self.cow_texture_drawer.attach_texture(cow_texture_id, cow_texture_unit)
+
         # enable Z-buffer
-        self.z_buffer_enabled = True
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
 
         self.is_loaded = True
-
-    def make_shader(self):
-        self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
-        self.shader.use()
-        uniform_texture = glGetUniformLocation(self.shader.shader_program, "u_texture")
-        glUniform1i(uniform_texture, 0)
 
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(0.0,0.0,0.0,1)
@@ -167,10 +178,15 @@ class Lecture02_MeshDemo(Demo):
 
         shader_id = self.shader.use()
         uniform_aspect = glGetUniformLocation(shader_id, "u_aspect_ratio")
-        glUniform1f(uniform_aspect, width / height)
+        aspect_ratio = width / height
+        glUniform1f(uniform_aspect, aspect_ratio)
 
-        self.shader.use()
+        shader_id = self.shader.use()
+        uniform_texture = glGetUniformLocation(shader_id, "u_texture")
         for i, mesh in enumerate(self.meshes):
+            # set the appropriate texture for the shader
+            glUniform1i(uniform_texture, i) # we bound head texture to unit 0 and cow's to unit 1
+
             # make rotation, scale, translation
             if i == 0:
                 scale = 2.0
@@ -196,15 +212,16 @@ class Lecture02_MeshDemo(Demo):
             else:
                 glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
 
+        # just for visualization
+        if self.draw_textures:
+            self.head_texture_drawer.render(aspect_ratio)
+            self.cow_texture_drawer.render(aspect_ratio)
+
+
     def keyboard_callback(self, window, key, scancode, action, mods):
         super().keyboard_callback(window, key, scancode, action, mods)
         if (key, action) == (glfw.KEY_Q, glfw.PRESS):
-            # Toggle z-buffer
-            self.z_buffer_enabled = not self.z_buffer_enabled
-            if self.z_buffer_enabled:
-                glEnable(GL_DEPTH_TEST)
-            else:
-                glDisable(GL_DEPTH_TEST)
+            self.draw_textures = not self.draw_textures
 
     def unload(self):
         if not self.is_loaded:

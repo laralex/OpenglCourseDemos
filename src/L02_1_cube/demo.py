@@ -7,6 +7,7 @@ from OpenGL.GL import *
 from PIL import Image
 import numpy as np
 import pyrr
+import glfw
 
 @dataclass
 class UiDefaults:
@@ -25,6 +26,7 @@ class Lecture02_CubeDemo(Demo):
         # ENABLE Z-BUFFER
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
+        self.z_buffer_enabled = True
 
         self.is_loaded = True
 
@@ -195,6 +197,16 @@ class Lecture02_CubeDemo(Demo):
         del self.vao, self.gpu_positions, self.gpu_texture_coords
         del self.texture
         super().unload()
+
+    def keyboard_callback(self, window, key, scancode, action, mods):
+        super().keyboard_callback(window, key, scancode, action, mods)
+        if (key, action) == (glfw.KEY_Q, glfw.PRESS):
+            # Toggle z-buffer
+            self.z_buffer_enabled = not self.z_buffer_enabled
+            if self.z_buffer_enabled:
+                glEnable(GL_DEPTH_TEST)
+            else:
+                glDisable(GL_DEPTH_TEST)
 
 
 

@@ -5,12 +5,18 @@ class GpuShader:
     def __init__(self, vertex_shader_code: str, fragment_shader_code: str, out_variable: bytes):
         if os.path.isfile(vertex_shader_code):
             vertex_shader_code = read_text_file(vertex_shader_code)
+        elif not vertex_shader_code.startswith('#version'):
+            raise ArgumentError(f'Given vertex shader is neither a filepath nor a valid GLSL code: {vertex_shader_code}')
+
         self.vertex_shader = glCreateShader(GL_VERTEX_SHADER)
         glShaderSource(self.vertex_shader, vertex_shader_code)
         glCompileShader(self.vertex_shader)
 
         if os.path.isfile(fragment_shader_code):
             fragment_shader_code = read_text_file(fragment_shader_code)
+        elif not vertex_shader_code.startswith('#version'):
+            raise ArgumentError(f'Given fragment shader is neither a filepath nor a valid GLSL code: {fragment_shader_code}')
+
         self.fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
         glShaderSource(self.fragment_shader, fragment_shader_code)
         glCompileShader(self.fragment_shader)

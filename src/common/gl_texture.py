@@ -3,10 +3,24 @@ from OpenGL.GL import *
 from PIL.Image import Image
 import numpy as np
 
+
+
 class GpuTexture:
     # All next configuring commands will affect this newly created texture object
     def bind(self):
         glBindTexture(self.target, self.gpu_id)
+
+    @property
+    def gl_id(self):
+        return self.gpu_id
+
+    @property
+    def gl_target(self):
+        return self.target
+
+    @property
+    def size_pixels(self):
+        return (self.width, self.height)
 
     def __init__(self, cpu_image: Image, is_1d=False):
         assert isinstance(cpu_image, Image)
