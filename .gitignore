@@ -4,6 +4,7 @@
 *.jpg
 *.jpeg
 !assets/spot_cow/spot_control_mesh.obj
+!assets/spot_cow/spot_triangulated.obj
 !assets/human_head/head.obj
 /cheatsheets
 
