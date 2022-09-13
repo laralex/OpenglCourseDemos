@@ -85,6 +85,9 @@ class Lecture01_JuliaDemo(Demo):
              1.0,  1.0,
         ), dtype=np.float32, order='C')
 
+        ZOOM_OUT = 1.5
+        screen_coords *= ZOOM_OUT
+
         # send data to GPU
         self.gpu_positions, self.gpu_screen_coords = glGenBuffers(2)
         glBindBuffer(GL_ARRAY_BUFFER, self.gpu_positions)

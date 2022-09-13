@@ -4,7 +4,6 @@ from OpenGL.GL import *
 from typing import Tuple
 import numpy as np
 import pyrr
-import os
 
 class TextureDrawer:
     """
@@ -49,10 +48,10 @@ class TextureDrawer:
         # interleaved attributes
         attributes = np.array((
             # X     Y    Z    U    V
-            -0.5, -0.5, -1.0, 0.0, 1.0,
-            -0.5,  0.5, -1.0, 0.0, 0.0,
-             0.5, -0.5, -1.0, 1.0, 1.0,
-             0.5,  0.5, -1.0, 1.0, 0.0,
+            -0.5, -0.5, -0.99, 0.0, 1.0,
+            -0.5,  0.5, -0.99, 0.0, 0.0,
+             0.5, -0.5, -0.99, 1.0, 1.0,
+             0.5,  0.5, -0.99, 1.0, 0.0,
         ), dtype=np.float32, order='C')
 
         float_nbytes = attributes.itemsize
@@ -77,7 +76,7 @@ class TextureDrawer:
         )
 
         # same for texture coordinates
-        texture_coords_attribute = glGetAttribLocation(shader_id, "a_texture_coords")
+        texture_coords_attribute = glGetAttribLocation(shader_id, "a_custom_data")
         glEnableVertexAttribArray(texture_coords_attribute)
         glVertexAttribPointer(texture_coords_attribute,
             2,
@@ -102,3 +101,8 @@ class TextureDrawer:
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
 
+    def __del__(self):
+        glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
+        glDeleteBuffers(1, np.asarray([self.gl_attributes], dtype=np.uint32))
+        del self.shader
+        del self.vao, self.gl_attributes

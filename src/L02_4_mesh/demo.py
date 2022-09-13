@@ -1,3 +1,4 @@
+from ..common.axes_gismo_drawer import AxesGismoDrawer
 from ..common.texture_drawer import TextureDrawer
 from ..common.gl_texture import GpuTexture
 from ..common.gl_shader import GpuShader
@@ -154,17 +155,7 @@ class Lecture02_MeshDemo(Demo):
             print('Loaded cow mesh and texture, n_elements:', self.meshes[-1].n_draw_elements)
 
         # Draw textures used in this demo, totally unnecessary and for visualization purposes
-        self.draw_textures = False
-
-        self.head_texture_drawer = TextureDrawer((-1,-0.25), (-0.5,0.25))
-        head_texture_id = self.meshes[0].texture.gl_id
-        head_texture_unit = self.meshes[0].texture_unit # 0
-        self.head_texture_drawer.attach_texture(head_texture_id, head_texture_unit)
-
-        cow_texture_id = self.meshes[1].texture.gl_id
-        cow_texture_unit = self.meshes[1].texture_unit # 0
-        self.cow_texture_drawer = TextureDrawer((0.5,-0.25), (1,0.25))
-        self.cow_texture_drawer.attach_texture(cow_texture_id, cow_texture_unit)
+        self.make_extra_visualizators()
 
         # enable Z-buffer
         glEnable(GL_DEPTH_TEST)
@@ -181,13 +172,11 @@ class Lecture02_MeshDemo(Demo):
         aspect_ratio = width / height
         glUniform1f(uniform_aspect, aspect_ratio)
 
-        shader_id = self.shader.use()
         uniform_texture = glGetUniformLocation(shader_id, "u_texture")
-        for i, mesh in enumerate(self.meshes):
-            # set the appropriate texture for the shader
-            glUniform1i(uniform_texture, i) # we bound head texture to unit 0 and cow's to unit 1
 
-            # make rotation, scale, translation
+        gizmo_transforms = []
+        for i, mesh in enumerate(self.meshes):
+            # make transforms
             if i == 0:
                 scale = 2.0
                 translation = (0.0, 0.1, 0.3)
@@ -196,13 +185,13 @@ class Lecture02_MeshDemo(Demo):
                 translation = (0.0, 0.0, -1.0)
 
             scale = pyrr.Matrix44.from_scale((scale, scale, scale), dtype=np.float32)
-
             rotation = pyrr.Matrix44.from_eulers((0.0, 0.0, global_time_sec/2), dtype=np.float32)
-
             translation = pyrr.Matrix44.from_translation(translation, dtype=np.float32)
-
             transform = translation @ rotation @ scale
+            gizmo_transforms.append(transform)
 
+            # set the appropriate texture for the shader
+            glUniform1i(uniform_texture, i) # we bound head texture to unit 0 and cow's to unit 1
             uniform_transform = glGetUniformLocation(shader_id, "u_transform")
             glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, transform)
 
@@ -213,15 +202,67 @@ class Lecture02_MeshDemo(Demo):
                 glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
 
         # just for visualization
-        if self.draw_textures:
-            self.head_texture_drawer.render(aspect_ratio)
-            self.cow_texture_drawer.render(aspect_ratio)
+        self.draw_extra_visualizations(aspect_ratio, gizmo_transforms)
 
+    def make_extra_visualizators(self):
+        self.texcoords_shader = GpuShader('_texcoords_vert.glsl', '_texcoords_frag.glsl', out_variable=b'out_color')
+        self.draw_textures = False
+        self.draw_gizmos = False
+        self.draw_uvs = False
+        self.visualize_for_mesh_idx = 0
+
+        self.texture_drawers = [TextureDrawer((-0.5,-0.5), (0.5,0.5)), TextureDrawer((-0.5,-0.5), (0.5,0.5))]
+        head_texture_id = self.meshes[0].texture.gl_id
+        head_texture_unit = self.meshes[0].texture_unit # 0
+        self.texture_drawers[0].attach_texture(head_texture_id, head_texture_unit)
+
+        cow_texture_id = self.meshes[1].texture.gl_id
+        cow_texture_unit = self.meshes[1].texture_unit # 0
+        self.texture_drawers[1].attach_texture(cow_texture_id, cow_texture_unit)
+
+        self.axes_gismo_drawers = [AxesGismoDrawer(), AxesGismoDrawer()] # one for each mesh
+
+    def draw_extra_visualizations(self, aspect_ratio, transforms):
+        current_line_width = glGetInteger(GL_LINE_WIDTH)
+        if self.draw_textures:
+            self.texture_drawers[self.visualize_for_mesh_idx].render(aspect_ratio)
+
+        if self.draw_uvs:
+            texcoords_shader_id = self.texcoords_shader.use()
+            uniform_aspect = glGetUniformLocation(texcoords_shader_id, "u_aspect_ratio")
+            glUniform1f(uniform_aspect, aspect_ratio)
+            _, current_polygon_mode = glGetInteger(GL_POLYGON_MODE)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glLineWidth(1)
+            mesh = self.meshes[self.visualize_for_mesh_idx]
+            mesh.use()
+            if mesh.has_index_buffer:
+                pass
+                glDrawElements(GL_TRIANGLES, mesh.n_draw_elements, GL_UNSIGNED_INT, None)
+            else:
+                glDrawArrays(GL_TRIANGLES, 0, mesh.n_draw_elements)
+            glPolygonMode(GL_FRONT_AND_BACK, current_polygon_mode)
+            glLineWidth(current_line_width)
+
+        if self.draw_gizmos:
+            glLineWidth(3)
+            for gizmo, transform in zip(self.axes_gismo_drawers, transforms):
+                gizmo.set_transform(transform)
+                gizmo.render(aspect_ratio)
+            glLineWidth(current_line_width)
 
     def keyboard_callback(self, window, key, scancode, action, mods):
         super().keyboard_callback(window, key, scancode, action, mods)
         if (key, action) == (glfw.KEY_Q, glfw.PRESS):
-            self.draw_textures = not self.draw_textures
+            if (self.draw_textures, self.draw_uvs) == (False, False):
+                self.draw_textures, self.draw_uvs = True, False
+                self.visualize_for_mesh_idx = (self.visualize_for_mesh_idx + 1) % 2
+            elif (self.draw_textures, self.draw_uvs) == (True, False):
+                self.draw_textures, self.draw_uvs = True, True
+            else:
+                self.draw_textures, self.draw_uvs = False, False
+        if (key, action) == (glfw.KEY_W, glfw.PRESS):
+            self.draw_gizmos = not self.draw_gizmos
 
     def unload(self):
         if not self.is_loaded:
