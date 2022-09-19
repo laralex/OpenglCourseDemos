@@ -16,6 +16,7 @@ class GpuMesh:
         self.normals_location  = None
         self.obj_filepath = obj_filepath
         self.use_index_buffer = use_index_buffer
+        self.is_built = False
 
     def with_attributes_size(self, position_n_coords: int, texcoord_n_coords: int, normals_n_coords: int):
         self.position_n_coords = position_n_coords
@@ -92,6 +93,7 @@ class GpuMesh:
                 attributes_stride,
                 ctypes.c_void_p(0),
             )
+
         if self.texcoord_location is not None:
             glEnableVertexAttribArray(self.texcoord_location)
             glVertexAttribPointer(self.texcoord_location,
@@ -115,17 +117,9 @@ class GpuMesh:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
-    def load_texture(self, texture_filepath):
-        if texture_filepath is not None:
-            cpu_image = Image.open(texture_filepath).transpose(Image.FLIP_TOP_BOTTOM)
-            self.texture = GpuTexture(cpu_image)
-        else:
-            self.texture = None
-
     def __del__(self):
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         if self.use_index_buffer:
             glDeleteBuffers(2, np.asarray([self.gpu_attributes, self.gpu_index_array], dtype=np.uint32))
         else:
             glDeleteBuffers(1, np.asarray([self.gpu_attributes], dtype=np.uint32))
-        del self.texture

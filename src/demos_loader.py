@@ -140,6 +140,7 @@ class DemosLoader(Demo):
         from .L02_2_cube_indexed.demo         import Lecture02_CubeIndexedDemo
         from .L02_3_cube_interleaved.demo     import Lecture02_CubeInterleavedDemo
         from .L02_4_mesh.demo                 import Lecture02_MeshDemo
+        from .L02_5_orthographic.demo         import Lecture02_OrthographicDemo
 
         classes = [
             Lecture01_ColorDemo,
@@ -154,6 +155,7 @@ class DemosLoader(Demo):
             Lecture02_CubeIndexedDemo,
             Lecture02_CubeInterleavedDemo,
             Lecture02_MeshDemo,
+            Lecture02_OrthographicDemo,
         ]
 
         self.demos = []
