@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from ..common.gl_shader import GpuShader
+from ..common.gpu_shader import GpuShader
 from ..demos_loader import Demo
 from ..common.defines import *
 from OpenGL.GL import *

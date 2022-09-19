@@ -1,4 +1,4 @@
-from ..common.gl_shader import GpuShader
+from .gpu_shader import GpuShader
 from ..common.defines import *
 from OpenGL.GL import *
 from typing import Tuple

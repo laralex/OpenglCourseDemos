@@ -22,6 +22,10 @@ class GpuTexture:
     def size_pixels(self):
         return (self.width, self.height)
 
+    def use(self, texture_unit=0):
+        glActiveTexture(GL_TEXTURE0 + texture_unit)
+        glBindTexture(GL_TEXTURE_2D, self.gpu_id)
+
     def __init__(self, cpu_image: Image, is_1d=False):
         assert isinstance(cpu_image, Image)
         self.width, self.height = cpu_image.size

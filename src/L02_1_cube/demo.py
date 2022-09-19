@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from ..common.gl_texture import GpuTexture
-from ..common.gl_shader import GpuShader
+from ..common.gpu_texture import GpuTexture
+from ..common.gpu_shader import GpuShader
 from ..demos_loader import Demo
 from ..common.defines import *
 from OpenGL.GL import *
@@ -33,11 +33,9 @@ class Lecture02_CubeDemo(Demo):
     def make_shader(self):
         self.shader = GpuShader('vert.glsl', 'frag.glsl', out_variable=b'out_color')
         self.texture = GpuTexture(cpu_image=Image.open('../../assets/crate_color.jpeg'))
+        self.texture.use(texture_unit=0)
 
         self.shader.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.texture.gpu_id)
         uniform_texture = glGetUniformLocation(self.shader.shader_program, "u_texture")
         glUniform1i(uniform_texture, 0)
 

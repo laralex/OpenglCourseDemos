@@ -1,7 +1,6 @@
 import argparse
 from src.demos_loader import DemosLoader
 from src.common.window import *
-import src.common.gl_texture
 
 from src.common import defines
 from OpenGL.GL import *
