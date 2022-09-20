@@ -52,6 +52,20 @@ class Lecture02_OrthographicDemo(Demo):
 
         self.is_loaded = True
 
+
+    def get_orthogonal_matrix(self, left, right, bottom, top, near, far):
+        """ Analogous to calling
+            pyrr.Matrix44.orthogonal_projection(left, right, bottom, top, near, far, dtype=np.float32)"""
+        width  = right - left
+        height = top - bottom
+        depth  = far - near
+        return np.ascontiguousarray([
+                      2/width,                      0,                   0, 0,
+                            0,               2/height,                   0, 0,
+                            0,                      0,            -2/depth, 0,
+        -(right + left)/width, -(top + bottom)/height, -(far + near)/depth, 1,
+        ], dtype=np.float32)
+
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         glClearColor(0.0,0.0,0.0,1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -61,11 +75,10 @@ class Lecture02_OrthographicDemo(Demo):
         aspect_ratio = width / height
         glUniform1f(uniform_aspect, aspect_ratio)
 
-        orthographic_projection = pyrr.matrix44.create_orthogonal_projection(
-            self.ortho_left, self.ortho_right,
+        orthographic_projection = self.get_orthogonal_matrix(
+            self.ortho_left  , self.ortho_right,
             self.ortho_bottom, self.ortho_top,
-            self.ortho_near, self.ortho_far,
-            np.float32)
+            self.ortho_near  , self.ortho_far)
 
         uniform_transform = glGetUniformLocation(shader_id, "u_transform")
         glUniformMatrix4fv(uniform_transform, 1, GL_FALSE, orthographic_projection)
