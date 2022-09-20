@@ -8,6 +8,7 @@ class Lecture01_TriangleDemo(Demo):
         super().__init__(ui_defaults=None)
 
     def load(self, window):
+        print('@'*100, 'load')
         self.make_shader()
         self.make_vertex_data()
         self.is_loaded = True
@@ -129,10 +130,12 @@ class Lecture01_TriangleDemo(Demo):
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, 3)
 
+        # print(glGetInteger(GL_CURRENT_PROGRAM), self.shader_program)
+
     def unload(self):
         if not self.is_loaded:
             return
-
+        glUseProgram(0)
         glDeleteVertexArrays(1, np.asarray([self.vao]))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_colors]))
         glDeleteProgram(self.shader_program)

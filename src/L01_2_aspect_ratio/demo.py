@@ -146,6 +146,7 @@ class Lecture01_AspectRatioDemo(Demo):
         if not self.is_loaded:
             return
 
+        glUseProgram(0)
         glDeleteVertexArrays(1, np.asarray([self.vao]))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_colors]))
         glDeleteProgram(self.shader_program)

@@ -135,6 +135,7 @@ class Lecture01_MandelbrotDemo(Demo):
         if not self.is_loaded:
             return
         self.is_loaded = False
+        glUseProgram(0)
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_screen_coords], dtype=np.uint32))
         glDeleteTextures(1, np.asarray([self.texture_id], dtype=np.uint32))

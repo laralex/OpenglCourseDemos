@@ -111,6 +111,7 @@ class Lecture02_OrthographicDemo(Demo):
         if not self.is_loaded:
             return
         self.is_loaded = False
+        glUseProgram(0)
         glDisable(GL_DEPTH_TEST)
         del self.shader
         del self.scene

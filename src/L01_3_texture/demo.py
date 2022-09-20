@@ -142,6 +142,7 @@ class Lecture01_TextureDemo(Demo):
             return
         self.is_loaded = False
 
+        glUseProgram(0)
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(2, np.asarray([self.gpu_positions, self.gpu_texture_coords], dtype=np.uint32))
         glDeleteTextures(np.array([self.texture_id], dtype=np.uint32))

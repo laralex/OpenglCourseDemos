@@ -146,6 +146,7 @@ class Lecture02_CubeInterleavedDemo(Demo):
         if not self.is_loaded:
             return
         self.is_loaded = False
+        glUseProgram(0)
         glDisable(GL_DEPTH_TEST)
         glDeleteVertexArrays(1, np.asarray([self.vao], dtype=np.uint32))
         glDeleteBuffers(1, np.asarray([self.gpu_attributes], dtype=np.uint32))

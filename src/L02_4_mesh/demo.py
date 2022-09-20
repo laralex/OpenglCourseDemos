@@ -268,10 +268,15 @@ class Lecture02_MeshDemo(Demo):
         if not self.is_loaded:
             return
         self.is_loaded = False
+        glUseProgram(0)
         glDisable(GL_DEPTH_TEST)
+        # not deleting, for faster reload (parsing huge OBJ files takes long time)
         # for mesh in self.meshes:
         #     del mesh
         del self.shader
+        del self.texcoords_shader
+        del self.texture_drawers
+        del self.draw_gizmos
         super().unload()
 
 

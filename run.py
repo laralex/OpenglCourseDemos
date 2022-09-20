@@ -9,6 +9,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(prog='CourseDemos', description='OpenGL ISP course demos and homeworks')
     parser.add_argument('startup_demo', nargs='?', default='L01_7_julia',
                     help='Directory of the demo that will show up first (helps to debug)')
+    parser.add_argument('--nogui', dest='use_gui', action='store_false')
     return parser.parse_args()
 
 def main():
@@ -28,10 +29,11 @@ def main():
         print('> GPU Vendor:', glGetString(GL_VENDOR))
         print('> GPU Configuration', glGetString(GL_RENDERER))
 
-        loader = DemosLoader(ui_defaults=None, startup_demo_id=args.startup_demo)
-        loader.load(window)
+        loader = DemosLoader()
+        loader.load(window, use_gui=args.use_gui, startup_demo_id=args.startup_demo)
         loader.render_loop(window)
     finally:
+        del loader
         glfw.terminate()
 
 if __name__ == "__main__":

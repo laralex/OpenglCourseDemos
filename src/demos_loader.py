@@ -1,9 +1,13 @@
+from contextlib import suppress
 import time
 import sys, os
 from .common.window import *
 from .common.defines import *
 from OpenGL.GL import *
 import inspect
+
+import imgui
+import imgui.integrations.glfw
 
 # Base class for lecture and homework demos
 class Demo:
@@ -32,6 +36,11 @@ class Demo:
     def render_frame(self, width, height, global_time_sec, delta_time_sec):
         pass
 
+    def render_ui(self):
+        imgui.begin("", True)
+        imgui.text('FPS: %.2f' % imgui.get_io().framerate)
+        imgui.end()
+
     def load(self, window):
         pass
 
@@ -39,25 +48,51 @@ class Demo:
         pass
 
 
+class ImguiWrapper:
+    def __init__(self, glfw_window, use_gui=True):
+        self.imgui_impl = None
+        self.use_gui = use_gui
+        if use_gui:
+            imgui.create_context()
+            self.imgui_impl = imgui.integrations.glfw.GlfwRenderer(glfw_window)
+            io = imgui.get_io()
+            io.font_global_scale *= 1.3
+
+    def render_ui(self, other_demo, current_polygon_mode, *args):
+        if self.use_gui:
+            # setting polygon mode to fill, otherwise imgui is rendered 
+            # with lines/points as well as the demos
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+            imgui.new_frame()
+            other_demo.render_ui(*args)
+            imgui.render()
+            self.imgui_impl.render(imgui.get_draw_data())
+            imgui.end_frame()
+
+            glPolygonMode(GL_FRONT_AND_BACK, current_polygon_mode)
+
+    def process_inputs(self):
+        if self.use_gui:
+            self.imgui_impl.process_inputs()
+
+    def __del__(self):
+        if self.use_gui:
+            self.imgui_impl.shutdown()
+
+
 # A wrapper class to import all separate demos
 # and render them in one window with convenient switching between demos
-class DemosLoader(Demo):
-    def __init__(self, ui_defaults, startup_demo_id):
-        super().__init__(ui_defaults=ui_defaults)
+class DemosLoader:
+    def __init__(self):
         self.register_all_demos()
-        self.current_demo_idx = -1
-        for idx, (demo_id, _) in enumerate(self.demos):
-            if demo_id == startup_demo_id:
-                self.current_demo_idx = idx
-        if self.current_demo_idx == -1:
-            print(f'> Failed to find demo: {startup_demo_id}. Loading the first available demo.')
-            self.current_demo_idx = 0
 
         self.windowed_position = None
         self.windowed_size = None
 
         self.draw_modes = [GL_FILL, GL_LINE, GL_POINT]
-        self.current_draw_mode_idx = 0
+        self.current_polygon_draw_mode_idx = 0
+        self.current_polygon_draw_mode = self.draw_modes[self.current_polygon_draw_mode_idx]
 
     @property
     def current_demo(self):
@@ -78,7 +113,6 @@ class DemosLoader(Demo):
         self.window_size_callback(window, *self.windowed_size)
 
     def keyboard_callback(self, window, key, scancode, action, mods):
-        super().keyboard_callback(window, key, scancode, action, mods)
         changed_demo = False
         running_demo = self.current_demo
         if (key, action) == (glfw.KEY_LEFT_BRACKET, glfw.PRESS):
@@ -100,12 +134,12 @@ class DemosLoader(Demo):
                 window_position=self.windowed_position,
                 window_size=self.windowed_size)
         if (key, action) == (glfw.KEY_P, glfw.PRESS):
-            self.current_draw_mode_idx += 1
-            self.current_draw_mode_idx %= len(self.draw_modes)
-            current_draw_mode = self.draw_modes[self.current_draw_mode_idx]
+            self.current_polygon_draw_mode_idx += 1
+            self.current_polygon_draw_mode_idx %= len(self.draw_modes)
+            self.current_polygon_draw_mode = self.draw_modes[self.current_polygon_draw_mode_idx]
             glLineWidth(2)
             glPointSize(2)
-            glPolygonMode(GL_FRONT_AND_BACK, current_draw_mode)
+            glPolygonMode(GL_FRONT_AND_BACK, self.current_polygon_draw_mode)
 
         if changed_demo:
             running_demo.unload()
@@ -115,15 +149,12 @@ class DemosLoader(Demo):
             self.current_demo.keyboard_callback(window, key, scancode, action, mods)
 
     def mouse_button_callback(self, window, button, action, mods):
-        super().mouse_button_callback(window, button, action, mods)
         self.current_demo.mouse_button_callback(window, button, action, mods)
 
     def mouse_scroll_callback(self, window, xoffset, yoffset):
-        super().mouse_scroll_callback(window, xoffset, yoffset)
         self.current_demo.mouse_scroll_callback(window, xoffset, yoffset)
 
     def window_size_callback(self, window, width, height):
-        super().window_size_callback(window, width, height)
         glViewport(0, 0, width, height)
         self.current_demo.window_size_callback(window, width, height)
 
@@ -169,16 +200,34 @@ class DemosLoader(Demo):
         # infinite render loop, until the window is requested to close
         while not glfw.window_should_close(window):
             width, height = glfw.get_framebuffer_size(window)
+
             global_time_sec = time.time()
-            if self.current_demo.is_loaded:
+
+            current_demo = self.current_demo
+            if current_demo.is_loaded:
                 delta_time_sec = max(global_time_sec - last_time_sec, 1e-5)
-                self.current_demo.render_frame(width, height, global_time_sec, delta_time_sec) # draw to memory
+                current_demo.render_frame(width, height, global_time_sec, delta_time_sec) # draw to memory
+                self.gui_wrapper.render_ui(current_demo, current_polygon_mode=self.current_polygon_draw_mode)
                 glfw.swap_buffers(window) # flush from memory to the screen pixels
                 last_time_sec = global_time_sec
-            glfw.poll_events()        # handle keyboard/mouse/window events
 
-    def load(self, window):
+            glfw.poll_events() # handle keyboard/mouse/window events
+            self.gui_wrapper.process_inputs()
+
+
+    def load(self, window, use_gui, startup_demo_id):
+        # select startup demo index
+        self.current_demo_idx = -1
+        for idx, (demo_id, _) in enumerate(self.demos):
+            if demo_id == startup_demo_id:
+                self.current_demo_idx = idx
+        if self.current_demo_idx == -1:
+            print(f'> Failed to find demo: {startup_demo_id}. Loading the first available demo.')
+            self.current_demo_idx = 0
+
+        self.gui_wrapper = ImguiWrapper(window, use_gui)
         self.load_current_demo(window)
+
         glfw_set_input_callbacks(window=window,
             keyboard_callback=self.keyboard_callback,
             mouse_button_callback=self.mouse_button_callback,
