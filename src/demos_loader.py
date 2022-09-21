@@ -44,7 +44,10 @@ class ImguiWrapper:
 
     def __del__(self):
         if self.gui_initialized:
-            self.imgui_impl.shutdown()
+            try:
+                self.imgui_impl.shutdown()
+            except Exception as e:
+                print(e)
 
 
 # A wrapper class to import all separate demos

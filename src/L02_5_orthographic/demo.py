@@ -25,6 +25,7 @@ class Lecture02_OrthographicDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
         self.reset_camera()
+        self.ui_width_height_proportional = True
     
     def reset_camera(self):
         self.ortho_bottom, self.ortho_top = -1, 1
@@ -109,9 +110,74 @@ class Lecture02_OrthographicDemo(BaseDemo):
             self.reset_camera()
 
     def render_ui(self):
-        imgui.begin("", True)
+        imgui.set_next_window_collapsed(True, imgui.FIRST_USE_EVER)
+        imgui.set_next_window_position(0, 0, condition=imgui.FIRST_USE_EVER)
+        imgui.begin("Info", closable=True, flags=imgui.WINDOW_NO_FOCUS_ON_APPEARING)
         imgui.text('FPS: %.2f' % imgui.get_io().framerate)
         imgui.end()
+
+        min_range, max_range = -10, 10
+        imgui.begin("Controls", closable=True, flags=imgui.WINDOW_NO_FOCUS_ON_APPEARING)
+        _, self.ui_width_height_proportional = imgui.checkbox("Width and height are proportional", self.ui_width_height_proportional)
+        if imgui.button('Reset camera'):
+            self.reset_camera()
+
+        imgui.columns(2, '')
+        _, candidate_bottom = imgui.slider_float('Bottom', self.ortho_bottom, min_range, max_range, '%.2f')
+        if candidate_bottom > self.ortho_top-1e-2:
+            imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+            imgui.text("Clamped to Top")
+            imgui.pop_style_color(1)
+        self.ortho_bottom = min(candidate_bottom, self.ortho_top-1e-2)
+        imgui.next_column()
+
+        _, candidate_top =  imgui.slider_float('Top', self.ortho_top, min_range, max_range, '%.2f', power=1.0)
+        if candidate_top < self.ortho_bottom+1e-2:
+            imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+            imgui.text("Clamped to Bottom")
+            imgui.pop_style_color(1)
+        self.ortho_top = max(candidate_top, self.ortho_bottom+1e-2)
+        imgui.next_column()
+
+        if not self.ui_width_height_proportional:
+            _, candidate_left = imgui.slider_float('Left', self.ortho_left, min_range, max_range, '%.2f')
+            if candidate_left > self.ortho_right-1e-2:
+                imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+                imgui.text("Clamped to Right")
+                imgui.pop_style_color(1)
+            self.ortho_left = min(candidate_left, self.ortho_right-1e-2)
+            imgui.next_column()
+
+            _, candidate_right =  imgui.slider_float('Right', self.ortho_right, min_range, max_range, '%.2f', power=1.0)
+            if candidate_right < self.ortho_left+1e-2:
+                imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+                imgui.text("Clamped to Left")
+                imgui.pop_style_color(1)
+            self.ortho_right = max(candidate_right, self.ortho_left+1e-2)
+            imgui.next_column()
+        else:
+            self.ortho_left  = min(candidate_bottom, self.ortho_right-1e-2)
+            self.ortho_right = max(candidate_top, self.ortho_left+1e-2)
+
+        min_range, max_range = -1.5, 3
+        _, candidate_near = imgui.slider_float('Near', self.ortho_near, min_range, max_range, '%.2f')
+        if candidate_near > self.ortho_far-1e-2:
+            imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+            imgui.text("Clamped to Far")
+            imgui.pop_style_color(1)
+        self.ortho_near = min(candidate_near, self.ortho_far-1e-2)
+        imgui.next_column()
+
+        _, candidate_far =  imgui.slider_float('Far', self.ortho_far, min_range, max_range, '%.2f', power=1.0)
+        if candidate_far < self.ortho_near+1e-2:
+            imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.0, 0.0)
+            imgui.text("Clamped to Near")
+            imgui.pop_style_color(1)
+        self.ortho_far = max(candidate_far, self.ortho_near+1e-2)
+        imgui.next_column()
+
+        imgui.end()
+        
 
     def unload(self):
         if not self.is_loaded:
