@@ -9,57 +9,23 @@ import inspect
 import imgui
 import imgui.integrations.glfw
 
-# Base class for lecture and homework demos
-class Demo:
-    def __init__(self, ui_defaults):
-        self.ui_defaults = ui_defaults
-        self.is_loaded = False
-
-    @property
-    def demo_id(self) -> str:
-        path = os.path.abspath(sys.modules[self.__class__.__module__].__file__)
-        folder_name = os.path.normpath(path).split(os.path.sep)[-2]
-        return folder_name
-
-    def keyboard_callback(self, window, key, scancode, action, mods):
-        pass
-
-    def mouse_button_callback(self, window, button, action, mods):
-        pass
-
-    def mouse_scroll_callback(self, window, xoffset, yoffset):
-        pass
-
-    def window_size_callback(self, window, width, height):
-        pass
-
-    def render_frame(self, width, height, global_time_sec, delta_time_sec):
-        pass
-
-    def render_ui(self):
-        imgui.begin("", True)
-        imgui.text('FPS: %.2f' % imgui.get_io().framerate)
-        imgui.end()
-
-    def load(self, window):
-        pass
-
-    def unload(self):
-        pass
-
 
 class ImguiWrapper:
-    def __init__(self, glfw_window, use_gui=True):
+    def __init__(self, glfw_window, initialize_gui=True):
         self.imgui_impl = None
-        self.use_gui = use_gui
-        if use_gui:
+        if initialize_gui:
             imgui.create_context()
             self.imgui_impl = imgui.integrations.glfw.GlfwRenderer(glfw_window)
             io = imgui.get_io()
             io.font_global_scale *= 1.3
+        self.gui_initialized = initialize_gui
+        self.gui_enabled = True
+
+    def toggle_gui(self):
+        self.gui_enabled = not self.gui_enabled
 
     def render_ui(self, other_demo, current_polygon_mode, *args):
-        if self.use_gui:
+        if self.gui_initialized and self.gui_enabled:
             # setting polygon mode to fill, otherwise imgui is rendered 
             # with lines/points as well as the demos
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -73,11 +39,11 @@ class ImguiWrapper:
             glPolygonMode(GL_FRONT_AND_BACK, current_polygon_mode)
 
     def process_inputs(self):
-        if self.use_gui:
+        if self.gui_initialized:
             self.imgui_impl.process_inputs()
 
     def __del__(self):
-        if self.use_gui:
+        if self.gui_initialized:
             self.imgui_impl.shutdown()
 
 
@@ -140,6 +106,8 @@ class DemosLoader:
             glLineWidth(2)
             glPointSize(2)
             glPolygonMode(GL_FRONT_AND_BACK, self.current_polygon_draw_mode)
+        if (key, action) == (glfw.KEY_O, glfw.PRESS):
+            self.gui_wrapper.toggle_gui()
 
         if changed_demo:
             running_demo.unload()

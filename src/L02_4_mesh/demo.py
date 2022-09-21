@@ -3,7 +3,7 @@ from ..common.texture_drawer import TextureDrawer
 from ..common.gpu_texture import GpuTexture
 from ..common.gpu_shader import GpuShader
 from ..common.obj_loader import ParsedWavefront
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 from typing import Optional
@@ -119,7 +119,7 @@ class GpuMesh:
             glDeleteBuffers(1, np.asarray([self.gpu_attributes], dtype=np.uint32))
         del self.texture
 
-class Lecture02_MeshDemo(Demo):
+class Lecture02_MeshDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
         self.meshes = []

@@ -1,9 +1,9 @@
 import numpy as np
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 
-class Lecture01_AspectRatioDemo(Demo):
+class Lecture01_AspectRatioDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
 

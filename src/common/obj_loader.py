@@ -258,7 +258,6 @@ if __name__ == "__main__":
     d = np.abs(attributes).sum(axis=-1)
     print(d.min(), d.mean(), d.max())
     hi = d > 4
-    #print('@'*10, hi, attributes[hi])
     for i in range(hi.size):
         if hi[i]:
             print('Found', i, attributes[i])

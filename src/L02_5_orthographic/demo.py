@@ -1,7 +1,7 @@
 from ..common.gpu_texture import GpuTexture
 from ..common.gpu_shader import GpuShader
 from ..common.gpu_mesh import GpuMesh
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image, ImageCms
@@ -9,6 +9,7 @@ import io
 import glfw
 import pyrr
 import numpy as np
+import imgui
 
 def convert_to_srgb(img):
     '''Convert PIL image to sRGB color space (if possible)'''
@@ -20,7 +21,7 @@ def convert_to_srgb(img):
         img = ImageCms.profileToProfile(img, src_profile, dst_profile)
     return img
 
-class Lecture02_OrthographicDemo(Demo):
+class Lecture02_OrthographicDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
         self.reset_camera()
@@ -106,6 +107,11 @@ class Lecture02_OrthographicDemo(Demo):
             self.ortho_near -= DELTA
         elif key == glfw.KEY_R:
             self.reset_camera()
+
+    def render_ui(self):
+        imgui.begin("", True)
+        imgui.text('FPS: %.2f' % imgui.get_io().framerate)
+        imgui.end()
 
     def unload(self):
         if not self.is_loaded:

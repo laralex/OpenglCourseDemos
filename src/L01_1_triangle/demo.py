@@ -1,14 +1,13 @@
 import numpy as np
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 
-class Lecture01_TriangleDemo(Demo):
+class Lecture01_TriangleDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
 
     def load(self, window):
-        print('@'*100, 'load')
         self.make_shader()
         self.make_vertex_data()
         self.is_loaded = True

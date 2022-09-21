@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from ..common.gpu_texture import GpuTexture
 from ..common.gpu_shader import GpuShader
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image
@@ -13,7 +13,7 @@ import glfw
 class UiDefaults:
     color: int
 
-class Lecture02_CubeDemo(Demo):
+class Lecture02_CubeDemo(BaseDemo):
     def __init__(self):
         #ui_defaults = parse_json.parse_json('ui_defaults.json', UiDefaults.__name__, ['color'])
         super().__init__(ui_defaults=None)

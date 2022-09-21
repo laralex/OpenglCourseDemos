@@ -1,6 +1,6 @@
 from .gpu_texture import GpuTexture
 from ..common.obj_loader import ParsedWavefront
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image

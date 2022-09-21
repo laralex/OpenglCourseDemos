@@ -1,12 +1,12 @@
 from ..common.gpu_texture import GpuTexture
 from ..common.gpu_shader import GpuShader
-from ..demos_loader import Demo
+from ..base_demo import BaseDemo
 from ..common.defines import *
 from OpenGL.GL import *
 from PIL import Image
 import numpy as np
 
-class Lecture01_TransformDemo(Demo):
+class Lecture01_TransformDemo(BaseDemo):
     def __init__(self):
         super().__init__(ui_defaults=None)
 
