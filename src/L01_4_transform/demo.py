@@ -22,6 +22,7 @@ class Lecture01_TransformDemo(BaseDemo):
         # The fragrament shader uses rasterized texture coordinates `v_texcoord`
         # connect texture and the shader, so that we can render pixels with texture values
         self.texture = GpuTexture(cpu_image=Image.open('../../assets/crate_color.jpeg'))
+        # self.texture = GpuTexture(cpu_image=Image.open('../../assets/KAMEN-stup.png'))
         self.texture.use(texture_unit=0)
 
         self.shader.use()

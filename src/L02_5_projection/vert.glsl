@@ -14,5 +14,5 @@ void main()
    v_texture_coords = a_texture_coords;
 
    gl_Position = u_transform * vec4(a_position, 1.0);
-   // gl_Position.y *= u_aspect_ratio;
+   gl_Position.y *= u_aspect_ratio;
 }

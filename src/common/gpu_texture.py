@@ -1,6 +1,7 @@
 from . import defines
 from OpenGL.GL import *
 from PIL.Image import Image
+import PIL
 import numpy as np
 
 
@@ -26,8 +27,9 @@ class GpuTexture:
         glActiveTexture(GL_TEXTURE0 + texture_unit)
         glBindTexture(GL_TEXTURE_2D, self.gpu_id)
 
-    def __init__(self, cpu_image: Image, is_1d=False):
+    def __init__(self, cpu_image: Image, is_1d=False, flip_y=False, store_srgb=False):
         assert isinstance(cpu_image, Image)
+        cpu_image.load()
         self.width, self.height = cpu_image.size
         if is_1d:
             self.target = GL_TEXTURE_1D
@@ -51,27 +53,33 @@ class GpuTexture:
         # All next configuring commands will affect this newly created texture object
         glBindTexture(self.target, self.gpu_id)
 
+        if flip_y:
+            cpu_image = cpu_image.transpose(PIL.Image.Transpose.FLIP_TOP_BOTTOM)
+        cpu_image = np.copy(np.ascontiguousarray(cpu_image, dtype=np.uint8))
+        assert cpu_image.data.c_contiguous
+
         # Send the texture data from CPU to GPU
+        internal_format = GL_SRGB8_ALPHA8 if store_srgb else GL_RGBA
         if is_1d:
             assert self.height == 1
             glTexImage1D(self.target,
                 0,
-                GL_RGBA,
+                internal_format,
                 self.width,
                 0,
                 cpu_format,
                 GL_UNSIGNED_BYTE,
-                np.ascontiguousarray(cpu_image).flatten()
+                cpu_image,
             )
         else:
             glTexImage2D(self.target,
                 0,       # mip-map level we're filling in
-                GL_RGBA, # how on GPU the data will be layed out
+                internal_format, # how on GPU the data will be layed out
                 self.width, self.height,
                 0,      # always 0
                 cpu_format, # how on CPU we stored the `pixels` array
                 GL_UNSIGNED_BYTE, # which type of all values is in the `pixels` array
-                np.ascontiguousarray(cpu_image).flatten(), # array of channels for all pixels
+                cpu_image, # array of channels for all pixels
             )
 
         # Function `glTexParameteri` sets 1 parameter value
