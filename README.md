@@ -1,4 +1,4 @@
-# OpenGL course for ISP 2021 (Skoltech)
+# OpenGL course for ISP (Skoltech)
 
 ## OpenGL resources
 > I can't really suggest OpenGL books. Just beware that books older than 2010 may describe OpenGL 2, which is very obsolete and inefficient.
